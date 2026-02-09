@@ -51,9 +51,31 @@ export class ContractClassHashCache {
     cacheKey: string,
   ): Promise<string | undefined> {
     try {
+      const normalizeBlockId = (blockId: any) => {
+        // Some clients emit "pre_confirmed", devnet RPC rejects it.
+        // Some clients reject "pending" (your error: unmanaged: pending).
+        // So for devnet reads: force "latest".
+        if (blockId === "pre_confirmed") return "latest";
+        if (blockId === "pending") return "latest";
+
+        // Also handle object-style identifiers (depending on client versions)
+        if (blockId && typeof blockId === "object") {
+          const tag =
+            blockId.block_tag ??
+            blockId.blockTag ??
+            blockId.tag ??
+            blockId.block_id;
+          if (tag === "pre_confirmed" || tag === "pending") return "latest";
+        }
+
+        return blockId ?? "latest";
+      };
+
+      const normalizedBlockIdentifier = normalizeBlockId(blockIdentifier);
+
       const classHash = await publicClient.getClassHashAt(
         address,
-        blockIdentifier,
+        normalizedBlockIdentifier,
       );
       this.cache.set(cacheKey, classHash);
       return classHash;
