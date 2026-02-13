@@ -3,43 +3,54 @@ import * as chains from "@starknet-react/chains";
 const rpcUrlDevnet =
   process.env.NEXT_PUBLIC_DEVNET_PROVIDER_URL || "http://127.0.0.1:5050";
 // devnet with mainnet network ID
-const mainnetFork = {
-  id: chains.mainnet.id,
-  network: "devnet",
-  name: "Starknet Mainnet Fork",
+// const mainnetFork = {
+//   id: chains.mainnet.id,
+//   network: "devnet",
+//   name: "Starknet Mainnet Fork",
+//   nativeCurrency: {
+//     address:
+//       "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
+//     name: "STRK",
+//     symbol: "STRK",
+//     decimals: 18,
+//   },
+//   testnet: true,
+//   rpcUrls: {
+//     default: {
+//       http: [],
+//     },
+//     public: {
+//       http: [`${rpcUrlDevnet}/rpc`],
+//     },
+//   },
+//   paymasterRpcUrls: {
+//     avnu: {
+//       http: [rpcUrlDevnet],
+//     },
+//   },
+// } as chains.Chain;
+
+const devnet = {
+  ...chains.sepolia, // inherit everything sepolia expects
+  id: chains.sepolia.id, // local devnet reports SN_SEPOLIA
+  network: "devnet", // keep your app naming
+  name: "Local Devnet (SN_SEPOLIA)",
   nativeCurrency: {
     address:
-      "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
+      "0x04718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
     name: "STRK",
     symbol: "STRK",
     decimals: 18,
   },
-  testnet: true,
   rpcUrls: {
-    default: {
-      http: [],
-    },
-    public: {
-      http: [`${rpcUrlDevnet}/rpc`],
-    },
+    default: { http: [`${rpcUrlDevnet}/rpc`] },
+    public: { http: [`${rpcUrlDevnet}/rpc`] },
   },
   paymasterRpcUrls: {
-    avnu: {
-      http: [rpcUrlDevnet],
-    },
-  },
-} as chains.Chain;
-
-const devnet = {
-  ...chains.devnet,
-  rpcUrls: {
-    default: {
-      http: [],
-    },
-    public: {
-      http: [`${rpcUrlDevnet}/rpc`],
-    },
+    avnu: { http: [rpcUrlDevnet] },
   },
 } as const satisfies chains.Chain;
 
-export const supportedChains = { ...chains, devnet, mainnetFork };
+export const supportedChains = { ...chains, devnet };
+
+//  mainnetFork
