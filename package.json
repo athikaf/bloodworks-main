@@ -15,6 +15,8 @@
     "clean": "yarn workspace @ss-2/snfoundry clean",
     "compile": "yarn workspace @ss-2/snfoundry compile",
     "deploy": "yarn workspace @ss-2/snfoundry deploy",
+    "deploy1": "yarn workspace @ss-2/snfoundry errror",
+    "deploy2": "yarn workspace @ss-2/snfoundry errrorr",
     "deploy:clear": "yarn workspace @ss-2/snfoundry deploy:clear",
     "deploy:no-reset": "yarn workspace @ss-2/snfoundry deploy --no-reset",
     "format": "yarn workspace @ss-2/nextjs format && yarn workspace @ss-2/snfoundry format",

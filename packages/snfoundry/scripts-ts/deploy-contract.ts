@@ -142,6 +142,11 @@ const resetDeployments: boolean = argv.reset;
 let deployments = {};
 let deployCalls = [];
 
+const resetDeployCalls = () => {
+  deployCalls.length = 0;
+  pendingDeployments.length = 0;
+};
+
 type PendingDeployment = {
   name: string;
   classHash: string;
@@ -366,17 +371,8 @@ const deployContract_NotWait = async (payload: {
 
     deployCalls.push(udcCall as any);
 
-    // ✅ Predict the deployed address deterministically (no receipt/wait needed)
-    const udcDeployerAddress = unique === "0x1" ? deployer.address : "0x0";
-
-    const predictedAddress = hash.calculateContractAddressFromHash(
-      payload.salt,
-      payload.classHash,
-      constructorArray,
-      udcDeployerAddress,
-    );
-
-    return { contractAddress: predictedAddress };
+    // ❗Do not predict addresses for UDC. Use receipt events instead.
+    return { contractAddress: "0x0" };
   } catch (error) {
     console.error(red("Error building UDC call:"), error);
     throw error;
@@ -533,7 +529,7 @@ const deployContract = async (
     constructorCalldata,
   });
 
-  console.log(green("Contract Deployed at "), contractAddress);
+  console.log(yellow("Contract queued (address resolved after tx receipt)."));
 
   let finalContractName = contractName || contract;
 
@@ -560,7 +556,9 @@ const normalizeAddr = (a: string) => {
   return a.startsWith("0x") ? a : `0x${a}`;
 };
 
-const executeDeployCalls = async (options?: UniversalDetails) => {
+const executeDeployCalls = async (
+  options?: UniversalDetails,
+): Promise<Record<string, any>> => {
   if (deployCalls.length < 1) {
     throw new Error(
       red(
@@ -649,6 +647,7 @@ const executeDeployCalls = async (options?: UniversalDetails) => {
     console.error(e);
     throw "Deployment tx execution failed";
   }
+  return deployments as Record<string, any>;
 };
 
 const loadExistingDeployments = () => {
@@ -668,19 +667,19 @@ const exportDeployments = () => {
     `../deployments/${networkName}_latest.json`,
   );
 
-  if (!resetDeployments && fs.existsSync(networkPath)) {
-    const currentTimestamp = new Date().getTime();
-    fs.renameSync(
-      networkPath,
-      networkPath.replace("_latest.json", `_${currentTimestamp}.json`),
-    );
-  }
-
+  // If reset is requested, start fresh
   if (resetDeployments && fs.existsSync(networkPath)) {
     fs.unlinkSync(networkPath);
   }
 
-  fs.writeFileSync(networkPath, JSON.stringify(deployments, null, 2));
+  // ✅ Always merge with existing deployments file
+  let existing = {};
+  if (fs.existsSync(networkPath)) {
+    existing = JSON.parse(fs.readFileSync(networkPath, "utf8"));
+  }
+
+  const merged = { ...existing, ...deployments };
+  fs.writeFileSync(networkPath, JSON.stringify(merged, null, 2));
 };
 
 const assertDeployerDefined = () => {
@@ -798,4 +797,5 @@ export {
   assertDeployerDefined,
   assertDeployerSignable,
   assertRpcNetworkActive,
+  resetDeployCalls,
 };
