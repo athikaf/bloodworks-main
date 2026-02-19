@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useRef, useState, useEffect } from "react";
+import React, {
+  useCallback,
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,12 +19,15 @@ import { devnet } from "@starknet-react/chains";
 import { SwitchTheme } from "./SwitchTheme";
 import { useAccount, useNetwork, useProvider } from "@starknet-react/core";
 import { BlockIdentifier } from "starknet";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldReadContract";
 
 type HeaderMenuLink = {
   label: string;
   href: string;
   icon?: React.ReactNode;
 };
+
+const ROLE_PLATFORM_ADMIN = 3;
 
 export const menuLinks: HeaderMenuLink[] = [
   {
@@ -32,7 +41,11 @@ export const menuLinks: HeaderMenuLink[] = [
   },
 ];
 
-export const HeaderMenuLinks = () => {
+export const HeaderMenuLinks = ({
+  isPlatformAdmin,
+}: {
+  isPlatformAdmin: boolean;
+}) => {
   const pathname = usePathname();
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(false);
@@ -40,9 +53,16 @@ export const HeaderMenuLinks = () => {
   useEffect(() => {
     setIsDark(theme === "dark");
   }, [theme]);
+
+  // ✅ Filter menu: hide Debug Contracts unless platform admin
+  const visibleLinks = menuLinks.filter((link) => {
+    if (link.href === "/debug") return isPlatformAdmin;
+    return true;
+  });
+
   return (
     <>
-      {menuLinks.map(({ label, href, icon }) => {
+      {visibleLinks.map(({ label, href, icon }) => {
         const isActive = pathname === href;
         return (
           <li key={href}>
@@ -82,6 +102,26 @@ export const Header = () => {
 
   const { provider } = useProvider();
   const { address, status, chainId } = useAccount();
+  const isConnected = status === "connected" && !!address;
+
+  const { data: roleRaw } = useScaffoldReadContract({
+    contractName: "RoleRegistry",
+    functionName: "get_role",
+    args: [address], // ✅ ALWAYS a tuple
+    enabled: status === "connected" && !!address, // ✅ only fetch when ready
+    watch: false,
+  });
+
+  const roleNum = useMemo(() => {
+    if (roleRaw === undefined || roleRaw === null) return undefined;
+    try {
+      return Number(roleRaw);
+    } catch {
+      return undefined;
+    }
+  }, [roleRaw]);
+
+  const isPlatformAdmin = isConnected && roleNum === ROLE_PLATFORM_ADMIN;
   const { chain } = useNetwork();
   const [isDeployed, setIsDeployed] = useState(true);
 
@@ -140,7 +180,7 @@ export const Header = () => {
                 setIsDrawerOpen(false);
               }}
             >
-              <HeaderMenuLinks />
+              <HeaderMenuLinks isPlatformAdmin={isPlatformAdmin} />
             </ul>
           )}
         </div>
@@ -149,21 +189,21 @@ export const Header = () => {
           passHref
           className="hidden lg:flex items-center gap-2 ml-4 mr-6 shrink-0"
         >
-          <div className="flex relative w-10 h-10">
+          <div className="flex relative w-8 h-10">
             <Image
               alt="SE2 logo"
               className="cursor-pointer"
               fill
-              src="/logo.svg"
+              src="/logo.png"
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold leading-tight">Scaffold-Stark</span>
-            <span className="text-xs">Starknet dev stack</span>
+            <span className="font-bold leading-tight">Bloodworks</span>
+            <span className="text-xs">Powered by Trust</span>
           </div>
         </Link>
         <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">
-          <HeaderMenuLinks />
+          <HeaderMenuLinks isPlatformAdmin={isPlatformAdmin} />
         </ul>
       </div>
       <div className="navbar-end grow mr-2 gap-4">

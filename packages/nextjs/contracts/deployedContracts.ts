@@ -7,7 +7,7 @@ const deployedContracts = {
   devnet: {
     RoleRegistry: {
       address:
-        "0x603745a40565d1071af55a816bdb0378d32e05c1ec5f1d39b3135cad7e39c92",
+        "0x619d77ca79c784c6361e32bf5f899b7c883a0242ffcfacd213d1abadefbb9d8",
       abi: [
         {
           type: "impl",
@@ -264,7 +264,7 @@ const deployedContracts = {
     },
     BloodworksCore: {
       address:
-        "0x2f2b274115d6abd6bc8355c29cbc283f8b305a857d5ecae758b2ecacc1bb97a",
+        "0x7d98df94bf27e6afc2166727a4b99ce77f2598b2c2ae98f42039e2126cd2417",
       abi: [
         {
           type: "impl",
