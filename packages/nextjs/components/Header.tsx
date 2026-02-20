@@ -45,6 +45,15 @@ const donorLinks: HeaderMenuLink[] = [
   { label: "Profile", href: "/donor/profile" },
 ];
 
+// Bloodbank sidebar links (used inside mobile header drawer on /bloodbank/*)
+const bloodbankLinks: HeaderMenuLink[] = [
+  { label: "Dashboard", href: "/bloodbank/dashboard" },
+  { label: "Issue Credential", href: "/bloodbank/issue" },
+  { label: "Record Donation", href: "/bloodbank/record" },
+  { label: "History", href: "/bloodbank/history" }, // stub ok
+  { label: "Profile", href: "/bloodbank/profile" }, // stub ok
+];
+
 const HeaderMenuLinks = ({ isPlatformAdmin }: { isPlatformAdmin: boolean }) => {
   const pathname = usePathname();
   const { theme } = useTheme();
@@ -121,6 +130,11 @@ const DrawerNav = ({
 export const Header = () => {
   const pathname = usePathname();
   const isDonorRoute = pathname.startsWith("/donor");
+  const isBloodbankRoute = pathname.startsWith("/bloodbank");
+
+  // "role route" = routes where header should NOT show Home (desktop nav),
+  // and mobile drawer should show sidebar links + connect button.
+  const isRoleRoute = isDonorRoute || isBloodbankRoute;
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const burgerMenuRef = useRef<HTMLDivElement>(null);
@@ -137,12 +151,11 @@ export const Header = () => {
   const { address, status, chainId } = useAccount();
   const isConnected = status === "connected" && !!address;
 
-  // ✅ Read role only when connected
+  // ✅ Read role only when connected; IMPORTANT: only pass args when address exists
   const { data: roleRaw } = useScaffoldReadContract({
     contractName: "RoleRegistry",
     functionName: "get_role",
-    // IMPORTANT: only pass args when we have address
-    args: [address],
+    args: [address], // ✅ always a tuple
     enabled: isConnected,
     watch: false,
   });
@@ -170,10 +183,7 @@ export const Header = () => {
     ) {
       provider
         .getClassHashAt(address)
-        .then((classHash) => {
-          if (classHash) setIsDeployed(true);
-          else setIsDeployed(false);
-        })
+        .then((classHash) => setIsDeployed(!!classHash))
         .catch((e) => {
           console.error("contract check", e);
           if (e.toString().includes("Contract not found")) setIsDeployed(false);
@@ -189,31 +199,34 @@ export const Header = () => {
     chain.network,
   ]);
 
-  // For donor routes:
-  // - Desktop: show logo + connect + theme; no Home link menu
-  // - Mobile: show ONLY logo + ONE hamburger
-  const desktopLinksVisible = !isDonorRoute;
+  // Desktop nav links visible only on non-role routes (keeps Home for now)
+  const desktopLinksVisible = !isRoleRoute;
 
   const [scrolled, setScrolled] = useState(false);
-
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-
-    handleScroll(); // run once
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Choose drawer links based on route
+  const drawerLinks = isDonorRoute
+    ? donorLinks
+    : isBloodbankRoute
+      ? bloodbankLinks
+      : [];
+
   return (
     <div
-      className={`fixed top-0 navbar min-h-0 shrink-0 justify-between z-50 px-0 sm:px-2 border-b border-base-300 ${scrolled ? "bg-base-100/80 backdrop-blur-sm" : "bg-base-100"}`}
+      className={[
+        "fixed top-0 navbar min-h-0 shrink-0 justify-between z-50 px-0 sm:px-2 border-b border-base-300",
+        scrolled ? "bg-base-100/80 backdrop-blur-sm" : "bg-base-100",
+      ].join(" ")}
     >
       <div className="navbar-start w-auto lg:w-1/2 -mr-2">
-        {/* Mobile hamburger - single source of truth on donor routes */}
+        {/* Mobile hamburger */}
         <div className="lg:hidden" ref={burgerMenuRef}>
-          {/* On donor routes we ALWAYS show hamburger (since sidebar exists), otherwise keep old behavior */}
           <button
             className="ml-1 btn btn-ghost 
               [@media(max-width:379px)]:px-3! [@media(max-width:379px)]:py-1! 
@@ -233,6 +246,7 @@ export const Header = () => {
                 className="absolute inset-0 bg-black/40"
                 onClick={() => setIsDrawerOpen(false)}
               />
+
               {/* Panel */}
               <div className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-base-100 border-r border-base-300 p-4">
                 <div className="flex items-center justify-between mb-6">
@@ -259,18 +273,17 @@ export const Header = () => {
                   </button>
                 </div>
 
-                {/* DONOR ROUTE: show donor sidebar links (no Home) */}
-                {isDonorRoute ? (
+                {/* ROLE ROUTES: show sidebar links (NO Home) + connect/theme inside drawer */}
+                {isRoleRoute ? (
                   <>
                     <DrawerNav
-                      links={donorLinks}
+                      links={drawerLinks}
                       pathname={pathname}
                       onNavigate={() => setIsDrawerOpen(false)}
                     />
 
                     <div className="divider my-4" />
 
-                    {/* Wallet connect inside drawer */}
                     <div className="flex flex-col gap-3">
                       <CustomConnectButton />
                       <SwitchTheme
@@ -280,7 +293,7 @@ export const Header = () => {
                       />
                     </div>
 
-                    {/* Optional debug link for platform admin */}
+                    {/* Optional debug link for platform admin (kept OUT of normal nav) */}
                     {isPlatformAdmin && (
                       <>
                         <div className="divider my-4" />
@@ -296,7 +309,7 @@ export const Header = () => {
                     )}
                   </>
                 ) : (
-                  // NON-DONOR ROUTE: show normal header links
+                  // NON-role routes: show normal header links + connect/theme in drawer
                   <>
                     <ul className="menu menu-compact p-0">
                       <HeaderMenuLinks isPlatformAdmin={isPlatformAdmin} />
@@ -319,7 +332,7 @@ export const Header = () => {
           )}
         </div>
 
-        {/* Logo (show on desktop always; on mobile we still want logo visible next to hamburger) */}
+        {/* Logo */}
         <Link
           href="/"
           passHref
@@ -339,7 +352,7 @@ export const Header = () => {
           </div>
         </Link>
 
-        {/* Desktop header links (hide entirely on donor routes) */}
+        {/* Desktop header links (keep Home for now, but HIDE inside /donor/* and /bloodbank/*) */}
         {desktopLinksVisible && (
           <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">
             <HeaderMenuLinks isPlatformAdmin={isPlatformAdmin} />
@@ -347,7 +360,7 @@ export const Header = () => {
         )}
       </div>
 
-      {/* Right side controls (HIDE on donor mobile, since they’re in drawer) */}
+      {/* Desktop right side controls (always visible on desktop) */}
       <div className="navbar-end grow mr-2 gap-4 hidden lg:flex">
         {status === "connected" && !isDeployed ? (
           <span className="bg-[#8a45fc] text-[9px] p-1 text-white">
@@ -362,8 +375,8 @@ export const Header = () => {
         />
       </div>
 
-      {/* On non-donor routes, show connect/theme on mobile too (since links are inside drawer but connect is useful) */}
-      {!isDonorRoute && (
+      {/* On non-role routes, show connect on mobile too (role routes keep it inside the drawer) */}
+      {!isRoleRoute && (
         <div className="lg:hidden navbar-end mr-2 gap-2">
           <CustomConnectButton />
         </div>

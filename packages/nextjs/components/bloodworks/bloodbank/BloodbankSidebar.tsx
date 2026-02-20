@@ -57,7 +57,7 @@ export const BloodbankSidebar = () => {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-64 border-r border-base-300 bg-base-100 p-4 flex-col">
+      <aside className="hidden lg:flex w-64 border-r border-base-300 bg-base-100 p-4 flex-col fixed top-[64px] h-[calc(100vh-64px)] overflow-y-auto">
         <div className="mb-6">
           <h2 className="text-lg font-bold">Bloodbank</h2>
         </div>
@@ -74,7 +74,7 @@ export const BloodbankSidebar = () => {
           />
 
           {/* Drawer */}
-          <div className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-base-100 border-r border-base-300 p-4">
+          <div className="left-0 top-0 h-full w-80 max-w-[85vw] bg-base-100 border-r border-base-300 p-4">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-bold">Bloodbank</h2>
