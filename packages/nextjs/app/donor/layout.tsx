@@ -108,7 +108,7 @@ export default function DonorLayout({ children }: { children: ReactNode }) {
       <DonorSidebar />
 
       {/* Main content */}
-      <main className="flex-1 w-full p-4 lg:p-6 overflow-y-auto">
+      <main className="flex-1 w-full p-4 lg:p-6 lg:ml-64 mt-16 overflow-y-auto">
         {children}
       </main>
     </div>

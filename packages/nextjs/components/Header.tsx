@@ -142,7 +142,7 @@ export const Header = () => {
     contractName: "RoleRegistry",
     functionName: "get_role",
     // IMPORTANT: only pass args when we have address
-    args: address ? [address] : undefined,
+    args: [address],
     enabled: isConnected,
     watch: false,
   });
@@ -194,8 +194,22 @@ export const Header = () => {
   // - Mobile: show ONLY logo + ONE hamburger
   const desktopLinksVisible = !isDonorRoute;
 
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+
+    handleScroll(); // run once
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <div className="sticky top-0 navbar min-h-0 shrink-0 justify-between z-50 px-0 sm:px-2 border-b border-base-300">
+    <div
+      className={`fixed top-0 navbar min-h-0 shrink-0 justify-between z-50 px-0 sm:px-2 border-b border-base-300 ${scrolled ? "bg-base-100/80 backdrop-blur-sm" : "bg-base-100"}`}
+    >
       <div className="navbar-start w-auto lg:w-1/2 -mr-2">
         {/* Mobile hamburger - single source of truth on donor routes */}
         <div className="lg:hidden" ref={burgerMenuRef}>

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useAccount } from "@starknet-react/core";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldReadContract";
 import { Perk, PerkCard } from "./PerkCard";
 import { RedeemModal } from "./RedeemModal";
 
@@ -20,7 +19,7 @@ const PERKS: Perk[] = [
     minDonations: 1,
   },
   {
-    id: 1,
+    id: 2, // ✅ FIX: was id: 1 again — must be unique per perk
     title: "VIP Blue Jays Tickets",
     description: "2 VIP tickets after consistent donations.",
     partnerName: "Scotiabank / Blue Jays",
@@ -35,35 +34,6 @@ export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
 
   const [selectedPerk, setSelectedPerk] = useState<Perk | undefined>(undefined);
 
-  // For MVP: we do individual is_redeemed reads per perk
-  // (Later we can batch/index this, but keep it simple now)
-
-  const redeemedReads = PERKS.map((perk) => {
-    const enabled = !!donor;
-
-    // NOTE: hooks must be called unconditionally — so we call them for each perk
-    // but "enabled" prevents RPC spam when not connected.
-    const read = useScaffoldReadContract({
-      contractName: "BloodworksCore",
-      functionName: "is_redeemed",
-      args: donor ? [donor, perk.partnerId, perk.id] : undefined,
-      enabled,
-      watch: false,
-    });
-
-    return { perk, ...read };
-  });
-
-  const redeemedMap = useMemo(() => {
-    const m = new Map<string, boolean>();
-    for (const r of redeemedReads) {
-      const key = `${r.perk.partnerId}:${r.perk.id}`;
-      m.set(key, Boolean(r.data));
-    }
-    return m;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [redeemedReads.map((r) => r.data).join("|")]);
-
   return (
     <div className="w-full">
       <div className="flex items-end justify-between">
@@ -73,18 +43,16 @@ export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-        {redeemedReads.map((r) => {
-          const key = `${r.perk.partnerId}:${r.perk.id}`;
-          const isRedeemed = redeemedMap.get(key) ?? false;
+        {PERKS.map((perk) => {
+          const key = `${perk.partnerId}:${perk.id}`;
 
           return (
             <PerkCard
               key={key}
-              perk={r.perk}
+              perk={perk}
               donationCount={donationCount}
-              isRedeemed={isRedeemed}
-              isCheckingRedeemed={r.isLoading}
-              onRedeemClick={(perk) => setSelectedPerk(perk)}
+              donorAddress={donor}
+              onRedeemClick={(p) => setSelectedPerk(p)}
             />
           );
         })}
