@@ -64,6 +64,8 @@
 
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useAccount } from "@starknet-react/core";
 import { CustomConnectButton } from "~~/components/scaffold-stark/CustomConnectButton";
@@ -105,6 +107,14 @@ const Home = () => {
 
   const roleLabel = roleNum !== undefined ? ROLE_LABEL[roleNum] : undefined;
 
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isConnected && roleLabel === "donor") {
+      router.push("/donor/dashboard");
+    }
+  }, [isConnected, roleLabel, router]);
+
   return (
     <div className="flex items-center flex-col grow pt-10">
       <div className="px-5">
@@ -140,10 +150,6 @@ const Home = () => {
                   Error reading role. Check deployedContracts.ts + network.
                 </p>
               )}
-              {!isLoading && !error && roleLabel === "donor" && (
-                <DonorDashboardShell />
-              )}
-
               {!isLoading && !error && roleLabel && roleLabel !== "donor" && (
                 <h2 className="text-2xl font-bold">Welcome {roleLabel}</h2>
               )}
