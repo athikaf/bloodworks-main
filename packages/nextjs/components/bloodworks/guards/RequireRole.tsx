@@ -1,76 +1,54 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { CustomConnectButton } from "~~/components/scaffold-stark/CustomConnectButton";
-import { useRole } from "~~/hooks/bloodworks/useRole";
+import { ReactNode, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useAccount } from "@starknet-react/core";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldReadContract";
 
 type Props = {
-  allowedRole: number;
-  redirectTo?: string;
+  allowedRoles: number[]; // e.g. [2] for bloodbank, [1,4] etc.
+  redirectTo: string;
   children: ReactNode;
 };
 
-export const RequireRole = ({
-  allowedRole,
-  redirectTo = "/",
-  children,
-}: Props) => {
+export const RequireRole = ({ allowedRoles, redirectTo, children }: Props) => {
   const router = useRouter();
-  const pathname = usePathname();
-  const { isConnected, isLoadingRole, role, roleError } = useRole();
+  const { address, status } = useAccount();
+  const isConnected = status === "connected" && !!address;
+
+  // ✅ IMPORTANT: make these literals, not `string`
+  const contractName = "RoleRegistry" as const;
+  const functionName = "get_role" as const;
+
+  const { data: roleRaw, isLoading } = useScaffoldReadContract({
+    contractName,
+    functionName,
+    // ✅ tuple args; enabled ensures we don't actually run when address is undefined
+    args: [address] as const,
+    enabled: isConnected,
+    watch: false,
+  } as any); // <- keeps TS from collapsing config to `never` in your setup
+
+  const roleNum = useMemo(() => {
+    if (roleRaw === undefined || roleRaw === null) return undefined;
+    try {
+      return Number(roleRaw);
+    } catch {
+      return undefined;
+    }
+  }, [roleRaw]);
+
+  const isAllowed = roleNum !== undefined && allowedRoles.includes(roleNum);
 
   useEffect(() => {
     if (!isConnected) return;
-    if (isLoadingRole) return;
-    if (role === undefined) return;
+    if (isLoading) return;
+    if (!isAllowed) router.replace(redirectTo);
+  }, [isConnected, isLoading, isAllowed, redirectTo, router, allowedRoles]);
 
-    if (role !== allowedRole) {
-      router.replace(redirectTo);
-    }
-  }, [
-    isConnected,
-    isLoadingRole,
-    role,
-    allowedRole, // ✅ added
-    router,
-    redirectTo,
-  ]);
-  if (!isConnected) {
-    return (
-      <div className="p-6 max-w-xl">
-        <h1 className="text-2xl font-bold">Connect wallet</h1>
-        <p className="opacity-70 mt-2">
-          This area is for authorized users only.
-        </p>
-        <div className="mt-4">
-          <CustomConnectButton />
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoadingRole) {
-    return (
-      <div className="p-6 max-w-xl">
-        <p>Checking access…</p>
-      </div>
-    );
-  }
-
-  if (roleError) {
-    return (
-      <div className="p-6 max-w-xl">
-        <p className="text-error">
-          Error reading role. Check your deployedContracts.ts + selected
-          network.
-        </p>
-      </div>
-    );
-  }
-
-  // If role mismatched, we’ll redirect; render nothing briefly to avoid flicker
-  if (role !== allowedRole) return null;
+  if (!isConnected) return null;
+  if (isLoading) return null;
+  if (!isAllowed) return null;
 
   return <>{children}</>;
 };

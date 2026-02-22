@@ -131,10 +131,11 @@ export const Header = () => {
   const pathname = usePathname();
   const isDonorRoute = pathname.startsWith("/donor");
   const isBloodbankRoute = pathname.startsWith("/bloodbank");
+  const isPartnerRoute = pathname.startsWith("/partner");
 
   // "role route" = routes where header should NOT show Home (desktop nav),
   // and mobile drawer should show sidebar links + connect button.
-  const isRoleRoute = isDonorRoute || isBloodbankRoute;
+  const isRoleRoute = isDonorRoute || isBloodbankRoute || isPartnerRoute;
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const burgerMenuRef = useRef<HTMLDivElement>(null);

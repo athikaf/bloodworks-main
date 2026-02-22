@@ -7,13 +7,60 @@ const deployedContracts = {
   devnet: {
     RoleRegistry: {
       address:
-        "0x150d1a107aca94e802f1f30971d453160dc9b347c347323e79d6c45a0bb998a",
+        "0x71f063979e51292d031e535717239ff3054c87e8a922c0ee93bf83a280a2193",
       abi: [
         {
-          type: "impl",
-          name: "RoleRegistryImpl",
-          interface_name:
-            "contracts::role_registry::RoleRegistry::IRoleRegistry",
+          type: "constructor",
+          name: "constructor",
+          inputs: [
+            {
+              name: "owner",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+        },
+        {
+          type: "function",
+          name: "owner",
+          inputs: [],
+          outputs: [
+            {
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "get_role",
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::integer::u8",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "get_partner_id",
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::integer::u32",
+            },
+          ],
+          state_mutability: "view",
         },
         {
           type: "enum",
@@ -30,155 +77,184 @@ const deployedContracts = {
           ],
         },
         {
-          type: "interface",
-          name: "contracts::role_registry::RoleRegistry::IRoleRegistry",
-          items: [
-            {
-              type: "function",
-              name: "owner",
-              inputs: [],
-              outputs: [
-                {
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "transfer_ownership",
-              inputs: [
-                {
-                  name: "new_owner",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [],
-              state_mutability: "external",
-            },
-            {
-              type: "function",
-              name: "get_role",
-              inputs: [
-                {
-                  name: "account",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [
-                {
-                  type: "core::integer::u8",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "set_role",
-              inputs: [
-                {
-                  name: "account",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-                {
-                  name: "role",
-                  type: "core::integer::u8",
-                },
-              ],
-              outputs: [],
-              state_mutability: "external",
-            },
-            {
-              type: "function",
-              name: "is_platform_admin",
-              inputs: [
-                {
-                  name: "account",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [
-                {
-                  type: "core::bool",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "is_bloodbank_admin",
-              inputs: [
-                {
-                  name: "account",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [
-                {
-                  type: "core::bool",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "is_partner",
-              inputs: [
-                {
-                  name: "account",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [
-                {
-                  type: "core::bool",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "get_partner_id",
-              inputs: [
-                {
-                  name: "account",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [
-                {
-                  type: "core::integer::u32",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "set_partner_id",
-              inputs: [
-                {
-                  name: "account",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-                {
-                  name: "partner_id",
-                  type: "core::integer::u32",
-                },
-              ],
-              outputs: [],
-              state_mutability: "external",
-            },
-          ],
-        },
-        {
-          type: "constructor",
-          name: "constructor",
+          type: "function",
+          name: "is_platform_admin",
           inputs: [
             {
-              name: "owner",
+              name: "account",
               type: "core::starknet::contract_address::ContractAddress",
             },
           ],
+          outputs: [
+            {
+              type: "core::bool",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "is_bloodbank_admin",
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::bool",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "is_partner_admin",
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::bool",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "is_partner_operator",
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::bool",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "get_partner_operator_count",
+          inputs: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::integer::u32",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "transfer_ownership",
+          inputs: [
+            {
+              name: "new_owner",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "set_role",
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+            {
+              name: "role",
+              type: "core::integer::u8",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "set_partner_id",
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "add_operator",
+          inputs: [
+            {
+              name: "operator",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "remove_operator",
+          inputs: [
+            {
+              name: "operator",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "admin_add_operator",
+          inputs: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+            {
+              name: "operator",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "admin_remove_operator",
+          inputs: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+            {
+              name: "operator",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
         },
         {
           type: "event",
@@ -217,6 +293,11 @@ const deployedContracts = {
               type: "core::integer::u8",
               kind: "data",
             },
+            {
+              name: "updated_at",
+              type: "core::integer::u64",
+              kind: "data",
+            },
           ],
         },
         {
@@ -232,6 +313,55 @@ const deployedContracts = {
             {
               name: "partner_id",
               type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "updated_at",
+              type: "core::integer::u64",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::role_registry::RoleRegistry::OperatorAdded",
+          kind: "struct",
+          members: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "operator",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "updated_at",
+              type: "core::integer::u64",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::role_registry::RoleRegistry::OperatorRemoved",
+          kind: "struct",
+          members: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "operator",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "updated_at",
+              type: "core::integer::u64",
               kind: "data",
             },
           ],
@@ -256,21 +386,46 @@ const deployedContracts = {
               type: "contracts::role_registry::RoleRegistry::PartnerIdUpdated",
               kind: "nested",
             },
+            {
+              name: "OperatorAdded",
+              type: "contracts::role_registry::RoleRegistry::OperatorAdded",
+              kind: "nested",
+            },
+            {
+              name: "OperatorRemoved",
+              type: "contracts::role_registry::RoleRegistry::OperatorRemoved",
+              kind: "nested",
+            },
           ],
         },
       ],
       classHash:
-        "0x3c396fd1873944f0bccf26679d24617b1ce5a5c78517cd17ddcecaf0913976c",
+        "0x67139551ea3ec8054ee4d829c7f0ab341635afcc05da3f2e856cc070883120c",
     },
-    BloodworksCore: {
+    PerksRegistry: {
       address:
-        "0x1501678854186f5449e577a95c795a0f99fdaafbc767d22415152ed4db5ead5",
+        "0x548e24828b2eae2073d3bf2565cc693f8b3b8963740713975cb45ee89c36f33",
       abi: [
         {
-          type: "impl",
-          name: "BloodworksCoreImpl",
-          interface_name:
-            "contracts::bloodworks_core::BloodworksCore::IBloodworksCore",
+          type: "constructor",
+          name: "constructor",
+          inputs: [
+            {
+              name: "role_registry",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+        },
+        {
+          type: "function",
+          name: "get_role_registry",
+          inputs: [],
+          outputs: [
+            {
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          state_mutability: "view",
         },
         {
           type: "enum",
@@ -287,118 +442,227 @@ const deployedContracts = {
           ],
         },
         {
-          type: "interface",
-          name: "contracts::bloodworks_core::BloodworksCore::IBloodworksCore",
-          items: [
+          type: "struct",
+          name: "core::byte_array::ByteArray",
+          members: [
             {
-              type: "function",
-              name: "issue_credential",
-              inputs: [
-                {
-                  name: "donor",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [],
-              state_mutability: "external",
+              name: "data",
+              type: "core::array::Array::<core::bytes_31::bytes31>",
             },
             {
-              type: "function",
-              name: "record_donation",
-              inputs: [
-                {
-                  name: "donor",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [],
-              state_mutability: "external",
+              name: "pending_word",
+              type: "core::felt252",
             },
             {
-              type: "function",
-              name: "get_role_registry",
-              inputs: [],
-              outputs: [
-                {
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "get_status",
-              inputs: [
-                {
-                  name: "donor",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [
-                {
-                  type: "(core::bool, core::integer::u32, core::integer::u64, core::integer::u64, core::bool)",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "is_active",
-              inputs: [
-                {
-                  name: "donor",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-              ],
-              outputs: [
-                {
-                  type: "core::bool",
-                },
-              ],
-              state_mutability: "view",
-            },
-            {
-              type: "function",
-              name: "redeem_perk",
-              inputs: [
-                {
-                  name: "donor",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-                {
-                  name: "perk_id",
-                  type: "core::integer::u32",
-                },
-              ],
-              outputs: [],
-              state_mutability: "external",
-            },
-            {
-              type: "function",
-              name: "is_redeemed",
-              inputs: [
-                {
-                  name: "donor",
-                  type: "core::starknet::contract_address::ContractAddress",
-                },
-                {
-                  name: "partner_id",
-                  type: "core::integer::u32",
-                },
-                {
-                  name: "perk_id",
-                  type: "core::integer::u32",
-                },
-              ],
-              outputs: [
-                {
-                  type: "core::bool",
-                },
-              ],
-              state_mutability: "view",
+              name: "pending_word_len",
+              type: "core::integer::u32",
             },
           ],
         },
+        {
+          type: "function",
+          name: "get_perk",
+          inputs: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [
+            {
+              type: "(core::bool, core::integer::u32, core::byte_array::ByteArray, core::byte_array::ByteArray, core::byte_array::ByteArray)",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "get_next_perk_id",
+          inputs: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::integer::u32",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "create_perk",
+          inputs: [
+            {
+              name: "min_donations",
+              type: "core::integer::u32",
+            },
+            {
+              name: "title",
+              type: "core::byte_array::ByteArray",
+            },
+            {
+              name: "description",
+              type: "core::byte_array::ByteArray",
+            },
+            {
+              name: "image_url",
+              type: "core::byte_array::ByteArray",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::integer::u32",
+            },
+          ],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "update_perk",
+          inputs: [
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+            },
+            {
+              name: "active",
+              type: "core::bool",
+            },
+            {
+              name: "min_donations",
+              type: "core::integer::u32",
+            },
+            {
+              name: "title",
+              type: "core::byte_array::ByteArray",
+            },
+            {
+              name: "description",
+              type: "core::byte_array::ByteArray",
+            },
+            {
+              name: "image_url",
+              type: "core::byte_array::ByteArray",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "delete_perk",
+          inputs: [
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "event",
+          name: "contracts::perks_registry::PerksRegistry::PerkCreated",
+          kind: "struct",
+          members: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "updated_at",
+              type: "core::integer::u64",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::perks_registry::PerksRegistry::PerkUpdated",
+          kind: "struct",
+          members: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "updated_at",
+              type: "core::integer::u64",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::perks_registry::PerksRegistry::PerkDeleted",
+          kind: "struct",
+          members: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+              kind: "data",
+            },
+            {
+              name: "updated_at",
+              type: "core::integer::u64",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::perks_registry::PerksRegistry::Event",
+          kind: "enum",
+          variants: [
+            {
+              name: "PerkCreated",
+              type: "contracts::perks_registry::PerksRegistry::PerkCreated",
+              kind: "nested",
+            },
+            {
+              name: "PerkUpdated",
+              type: "contracts::perks_registry::PerksRegistry::PerkUpdated",
+              kind: "nested",
+            },
+            {
+              name: "PerkDeleted",
+              type: "contracts::perks_registry::PerksRegistry::PerkDeleted",
+              kind: "nested",
+            },
+          ],
+        },
+      ],
+      classHash:
+        "0x3ab8a1290c24ad6207e9532d770dfe6fa14ed8ed66357f0406b9482f9aaa3c5",
+    },
+    BloodworksCore: {
+      address:
+        "0x1bc8610f5d11750b074c12f6726d9f4c4f6abc1f3fc062f5150e84463aabe03",
+      abi: [
         {
           type: "constructor",
           name: "constructor",
@@ -414,6 +678,163 @@ const deployedContracts = {
           ],
         },
         {
+          type: "function",
+          name: "get_role_registry",
+          inputs: [],
+          outputs: [
+            {
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "enum",
+          name: "core::bool",
+          variants: [
+            {
+              name: "False",
+              type: "()",
+            },
+            {
+              name: "True",
+              type: "()",
+            },
+          ],
+        },
+        {
+          type: "function",
+          name: "is_redeemed",
+          inputs: [
+            {
+              name: "donor",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::bool",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "get_status",
+          inputs: [
+            {
+              name: "donor",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [
+            {
+              type: "(core::bool, core::integer::u32, core::integer::u64, core::integer::u64, core::bool)",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "is_active",
+          inputs: [
+            {
+              name: "donor",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::bool",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "get_partner_total_redemptions",
+          inputs: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::integer::u32",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "get_perk_redemption_count",
+          inputs: [
+            {
+              name: "partner_id",
+              type: "core::integer::u32",
+            },
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [
+            {
+              type: "core::integer::u32",
+            },
+          ],
+          state_mutability: "view",
+        },
+        {
+          type: "function",
+          name: "issue_credential",
+          inputs: [
+            {
+              name: "donor",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "record_donation",
+          inputs: [
+            {
+              name: "donor",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
+          type: "function",
+          name: "redeem_perk",
+          inputs: [
+            {
+              name: "donor",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+            {
+              name: "perk_id",
+              type: "core::integer::u32",
+            },
+          ],
+          outputs: [],
+          state_mutability: "external",
+        },
+        {
           type: "event",
           name: "contracts::bloodworks_core::BloodworksCore::CredentialIssued",
           kind: "struct",
@@ -421,6 +842,11 @@ const deployedContracts = {
             {
               name: "donor",
               type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "issued_at",
+              type: "core::integer::u64",
               kind: "data",
             },
           ],
@@ -503,7 +929,7 @@ const deployedContracts = {
         },
       ],
       classHash:
-        "0x717306c772917205f1ca217ff69fb3b2e0215418bd9e59d5439739fc431ffa8",
+        "0x1fc1161e2b22075b6202acdadea5b0da4ac332638ab748833c7f175c289d14a",
     },
   },
 } as const;
