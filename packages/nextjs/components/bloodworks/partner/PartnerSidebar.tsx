@@ -8,6 +8,7 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 const links = [
   { label: "Dashboard", href: "/partner/dashboard" },
   { label: "Perks", href: "/partner/perks" },
+  { label: "Operators", href: "/partner/operators" },
   { label: "History", href: "/partner/history" },
   { label: "Profile", href: "/partner/profile" },
 ];
@@ -38,7 +39,7 @@ export const PartnerSidebar = () => {
 
   return (
     <>
-      {/* Mobile top bar with hamburger */}
+      {/* Mobile top bar (we keep it for now; later your Header merges hamburger + connect) */}
       <div className="lg:hidden w-full border-b border-base-300 bg-base-100 px-4 py-3 flex items-center justify-between">
         <button
           className="btn btn-ghost btn-sm"
@@ -56,21 +57,20 @@ export const PartnerSidebar = () => {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-64 border-r border-base-300 bg-base-100 p-4 flex-col">
+      <aside className="hidden lg:flex w-64 border-r border-base-300 bg-base-100 p-4 flex-col sticky top-[64px] h-[calc(100vh-64px)]">
         <div className="mb-6">
           <h2 className="text-lg font-bold">Partner</h2>
         </div>
         <Nav />
       </aside>
 
-      {/* Mobile drawer overlay */}
+      {/* Mobile drawer */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-
           <div className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-base-100 border-r border-base-300 p-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold">Partner</h2>
