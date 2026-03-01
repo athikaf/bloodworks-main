@@ -16,27 +16,39 @@ mod BloodworksCore {
     // -------------------------
     const ROLE_DONOR: u8 = 0;
     const ROLE_PARTNER: u8 = 1;
-    const ROLE_BLOODBANK_ADMIN: u8 = 2;
+    const ROLE_BLOODBANK: u8 = 2;
     const ROLE_PLATFORM_ADMIN: u8 = 3;
+    const ROLE_OPERATOR: u8 = 4;
 
     // -------------------------
     // Errors
     // -------------------------
-    const ERR_NOT_BLOODBANK_ADMIN: felt252 = 'NOT_BLOODBANK_ADMIN';
+    const ERR_NOT_BLOODBANK: felt252 = 'NOT_BLOODBANK';
     const ERR_NOT_PARTNER: felt252 = 'NOT_PARTNER';
+    const ERR_NOT_PLATFORM_ADMIN: felt252 = 'NOT_PLATFORM_ADMIN';
+    const ERR_NOT_OPERATOR: felt252 = 'NOT_OPERATOR';
+    const ERR_OPERATOR_DISABLED: felt252 = 'OPERATOR_DISABLED';
+
     const ERR_NOT_ISSUED: felt252 = 'NOT_ISSUED';
-    const ERR_NOT_ACTIVE: felt252 = 'NOT_ACTIVE';
-    const ERR_ALREADY_REDEEMED: felt252 = 'ALREADY_REDEEMED';
     const ERR_BAD_COOLDOWN: felt252 = 'BAD_COOLDOWN';
-    const ERR_NO_PARTNER_ID: felt252 = 'NO_PARTNER_ID';
+
+    const ERR_BAD_PARTNER_ID: felt252 = 'BAD_PARTNER_ID';
+    const ERR_PERK_EXISTS: felt252 = 'PERK_EXISTS';
+    const ERR_PERK_NOT_FOUND: felt252 = 'PERK_NOT_FOUND';
+    const ERR_PERK_DISABLED: felt252 = 'PERK_DISABLED';
+    const ERR_NOT_AUTHORIZED: felt252 = 'NOT_AUTHORIZED';
 
     // -------------------------
-    // RoleRegistry interface (cross-contract)
+    // RoleRegistry interface (aligned to YOUR RoleRegistry)
     // -------------------------
     #[starknet::interface]
     trait IRoleRegistry<TContractState> {
         fn get_role(self: @TContractState, account: ContractAddress) -> u8;
+
         fn get_partner_id(self: @TContractState, account: ContractAddress) -> u32;
+
+        fn get_operator_partner_id(self: @TContractState, operator: ContractAddress) -> u32;
+        fn is_operator_enabled(self: @TContractState, operator: ContractAddress) -> bool;
     }
 
     // -------------------------
@@ -47,12 +59,19 @@ mod BloodworksCore {
         role_registry: ContractAddress,
         cooldown_seconds: u64,
 
+        // donor status
         issued: Map<ContractAddress, bool>,
         donation_count: Map<ContractAddress, u32>,
         last_donation_ts: Map<ContractAddress, u64>,
         cooldown_end_ts: Map<ContractAddress, u64>,
 
-        redeemed: Map<(ContractAddress, u32, u32), bool>,
+        // minimal on-chain perk state
+        perk_exists: Map<(u32, u32), bool>,          // (partner_id, perk_id)
+        perk_enabled: Map<(u32, u32), bool>,         // (partner_id, perk_id)
+
+        // minimal on-chain counters
+        perk_total_redemptions: Map<(u32, u32), u64>, // (partner_id, perk_id)
+        partner_total_redemptions: Map<u32, u64>,     // partner_id
     }
 
     // -------------------------
@@ -63,6 +82,9 @@ mod BloodworksCore {
     enum Event {
         CredentialIssued: CredentialIssued,
         DonationRecorded: DonationRecorded,
+
+        PerkCreated: PerkCreated,
+        PerkEnabledChanged: PerkEnabledChanged,
         PerkRedeemed: PerkRedeemed,
     }
 
@@ -80,10 +102,26 @@ mod BloodworksCore {
     }
 
     #[derive(Drop, starknet::Event)]
+    struct PerkCreated {
+        partner_id: u32,
+        perk_id: u32,
+        created_at: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct PerkEnabledChanged {
+        partner_id: u32,
+        perk_id: u32,
+        enabled: bool,
+        changed_at: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
     struct PerkRedeemed {
         donor: ContractAddress,
         partner_id: u32,
         perk_id: u32,
+        operator: ContractAddress,
         redeemed_at: u64,
     }
 
@@ -98,33 +136,51 @@ mod BloodworksCore {
     }
 
     // -------------------------
-    // Internal auth helpers
+    // Internal helpers
     // -------------------------
     fn role_registry_dispatcher(self: @ContractState) -> IRoleRegistryDispatcher {
         IRoleRegistryDispatcher { contract_address: self.role_registry.read() }
     }
 
-   fn assert_bloodbank_admin(self: @ContractState) {
-    let caller = get_caller_address();
-    let rr = role_registry_dispatcher(self);
-    let role = rr.get_role(caller);
-    assert(role == ROLE_BLOODBANK_ADMIN, ERR_NOT_BLOODBANK_ADMIN);
+    fn assert_bloodbank(self: @ContractState) {
+        let caller = get_caller_address();
+        let rr = role_registry_dispatcher(self);
+        assert(rr.get_role(caller) == ROLE_BLOODBANK, ERR_NOT_BLOODBANK);
     }
 
-    fn assert_partner(self: @ContractState) -> u32 {
-    let caller = get_caller_address();
-    let rr = role_registry_dispatcher(self);
-    let role = rr.get_role(caller);
-    assert(role == ROLE_PARTNER, ERR_NOT_PARTNER);
+    // Partner OR Platform Admin can manage perks for `partner_id`.
+    // - If Partner: partner_id must match their get_partner_id(caller)
+    // - If Admin: can manage any nonzero partner_id
+    fn assert_can_manage_partner(self: @ContractState, partner_id: u32) {
+        assert(partner_id != 0, ERR_BAD_PARTNER_ID);
 
-    let pid = rr.get_partner_id(caller);
-    assert(pid != 0, ERR_NO_PARTNER_ID);
-    pid
+        let caller = get_caller_address();
+        let rr = role_registry_dispatcher(self);
+        let role = rr.get_role(caller);
+
+        if role == ROLE_PLATFORM_ADMIN {
+            return ();
+        }
+
+        assert(role == ROLE_PARTNER, ERR_NOT_PARTNER);
+        let my_pid = rr.get_partner_id(caller);
+        assert(my_pid == partner_id, ERR_NOT_AUTHORIZED);
+    }
+
+    // Operator auth + derives partner_id from operator_partner_id(caller)
+    fn assert_operator_and_get_partner(self: @ContractState) -> u32 {
+        let operator = get_caller_address();
+        let rr = role_registry_dispatcher(self);
+
+        assert(rr.get_role(operator) == ROLE_OPERATOR, ERR_NOT_OPERATOR);
+        assert(rr.is_operator_enabled(operator), ERR_OPERATOR_DISABLED);
+
+        let pid = rr.get_operator_partner_id(operator);
+        assert(pid != 0, ERR_BAD_PARTNER_ID);
+        pid
     }
 
     fn is_active_internal(self: @ContractState, donor: ContractAddress) -> bool {
-        // Active window is between donation time and cooldown_end_ts.
-        // If cooldown_end_ts == 0 => not active.
         let end_ts = self.cooldown_end_ts.read(donor);
         if end_ts == 0 {
             return false;
@@ -133,44 +189,57 @@ mod BloodworksCore {
         now < end_ts
     }
 
+    fn perk_key(partner_id: u32, perk_id: u32) -> (u32, u32) {
+        (partner_id, perk_id)
+    }
+
     // -------------------------
     // Public interface
     // -------------------------
     #[starknet::interface]
     trait IBloodworksCore<TContractState> {
+        // donation system
         fn issue_credential(ref self: TContractState, donor: ContractAddress);
         fn record_donation(ref self: TContractState, donor: ContractAddress);
 
+        // reads
         fn get_role_registry(self: @TContractState) -> ContractAddress;
-
         fn get_status(self: @TContractState, donor: ContractAddress) -> (bool, u32, u64, u64, bool);
         fn is_active(self: @TContractState, donor: ContractAddress) -> bool;
 
+        // perk state (minimal enforceable)
+        fn create_perk(ref self: TContractState, partner_id: u32, perk_id: u32);
+        fn set_perk_enabled(ref self: TContractState, partner_id: u32, perk_id: u32, enabled: bool);
+        fn perk_exists(self: @TContractState, partner_id: u32, perk_id: u32) -> bool;
+        fn perk_enabled(self: @TContractState, partner_id: u32, perk_id: u32) -> bool;
+
+        // counters
+        fn get_perk_total_redemptions(self: @TContractState, partner_id: u32, perk_id: u32) -> u64;
+        fn get_partner_total_redemptions(self: @TContractState, partner_id: u32) -> u64;
+
+        // operator redemption
         fn redeem_perk(ref self: TContractState, donor: ContractAddress, perk_id: u32);
-        fn is_redeemed(self: @TContractState, donor: ContractAddress, partner_id: u32, perk_id: u32) -> bool;
     }
 
     #[abi(embed_v0)]
     impl BloodworksCoreImpl of IBloodworksCore<ContractState> {
-        // Blood bank: issue once (idempotent allowed or not? here: sets to true)
+        // Bloodbank: issue credential
         fn issue_credential(ref self: ContractState, donor: ContractAddress) {
-            assert_bloodbank_admin(@self);
+            assert_bloodbank(@self);
 
             self.issued.write(donor, true);
             self.emit(CredentialIssued { donor });
         }
 
-        // Blood bank: record donation, increments total donation_count, starts active window
+        // Bloodbank: record donation
         fn record_donation(ref self: ContractState, donor: ContractAddress) {
-            assert_bloodbank_admin(@self);
-
+            assert_bloodbank(@self);
             assert(self.issued.read(donor), ERR_NOT_ISSUED);
 
             let now = get_block_timestamp();
             let cd = self.cooldown_seconds.read();
             let end_ts = now + cd;
 
-            // increment donation count
             let prev = self.donation_count.read(donor);
             let next = prev + 1;
             self.donation_count.write(donor, next);
@@ -187,11 +256,9 @@ mod BloodworksCore {
         }
 
         fn get_role_registry(self: @ContractState) -> ContractAddress {
-    self.role_registry.read()
-}
+            self.role_registry.read()
+        }
 
-        // Donor/read: returns everything donor UI needs
-        // (issued, donation_count, last_donation_ts, cooldown_end_ts, is_active)
         fn get_status(self: @ContractState, donor: ContractAddress) -> (bool, u32, u64, u64, bool) {
             let issued_ = self.issued.read(donor);
             let count_ = self.donation_count.read(donor);
@@ -205,25 +272,82 @@ mod BloodworksCore {
             is_active_internal(self, donor)
         }
 
-        // Partner: redeem perk during active window
-        // partner_id is derived from caller via RoleRegistry (prevents spoofing)
-        fn redeem_perk(ref self: ContractState, donor: ContractAddress, perk_id: u32) {
-            let partner_id = assert_partner(@self);
+        // -------------------------
+        // Perk registry
+        // -------------------------
+        fn create_perk(ref self: ContractState, partner_id: u32, perk_id: u32) {
+            assert_can_manage_partner(@self, partner_id);
 
-            assert(self.issued.read(donor), ERR_NOT_ISSUED);
-            assert(is_active_internal(@self, donor), ERR_NOT_ACTIVE);
+            let k = perk_key(partner_id, perk_id);
+            assert(!self.perk_exists.read(k), ERR_PERK_EXISTS);
 
-            let key = (donor, partner_id, perk_id);
-            assert(!self.redeemed.read(key), ERR_ALREADY_REDEEMED);
-
-            self.redeemed.write(key, true);
+            self.perk_exists.write(k, true);
+            self.perk_enabled.write(k, true);
 
             let now = get_block_timestamp();
-            self.emit(PerkRedeemed { donor, partner_id, perk_id, redeemed_at: now });
+            self.emit(PerkCreated { partner_id, perk_id, created_at: now });
         }
 
-        fn is_redeemed(self: @ContractState, donor: ContractAddress, partner_id: u32, perk_id: u32) -> bool {
-            self.redeemed.read((donor, partner_id, perk_id))
+        fn set_perk_enabled(ref self: ContractState, partner_id: u32, perk_id: u32, enabled: bool) {
+            assert_can_manage_partner(@self, partner_id);
+
+            let k = perk_key(partner_id, perk_id);
+            assert(self.perk_exists.read(k), ERR_PERK_NOT_FOUND);
+
+            self.perk_enabled.write(k, enabled);
+
+            let now = get_block_timestamp();
+            self.emit(PerkEnabledChanged { partner_id, perk_id, enabled, changed_at: now });
+        }
+
+        fn perk_exists(self: @ContractState, partner_id: u32, perk_id: u32) -> bool {
+            self.perk_exists.read(perk_key(partner_id, perk_id))
+        }
+
+        fn perk_enabled(self: @ContractState, partner_id: u32, perk_id: u32) -> bool {
+            self.perk_enabled.read(perk_key(partner_id, perk_id))
+        }
+
+        // -------------------------
+        // Counters
+        // -------------------------
+        fn get_perk_total_redemptions(self: @ContractState, partner_id: u32, perk_id: u32) -> u64 {
+            self.perk_total_redemptions.read(perk_key(partner_id, perk_id))
+        }
+
+        fn get_partner_total_redemptions(self: @ContractState, partner_id: u32) -> u64 {
+            self.partner_total_redemptions.read(partner_id)
+        }
+
+        // -------------------------
+        // Redemption (operator-only)
+        // -------------------------
+        fn redeem_perk(ref self: ContractState, donor: ContractAddress, perk_id: u32) {
+            let operator = get_caller_address();
+            let partner_id = assert_operator_and_get_partner(@self);
+
+            // keep system coherent (no medical data stored)
+            assert(self.issued.read(donor), ERR_NOT_ISSUED);
+
+            let k = perk_key(partner_id, perk_id);
+            assert(self.perk_exists.read(k), ERR_PERK_NOT_FOUND);
+            assert(self.perk_enabled.read(k), ERR_PERK_DISABLED);
+
+            // increment counters
+            let perk_prev = self.perk_total_redemptions.read(k);
+            self.perk_total_redemptions.write(k, perk_prev + 1);
+
+            let partner_prev = self.partner_total_redemptions.read(partner_id);
+            self.partner_total_redemptions.write(partner_id, partner_prev + 1);
+
+            let now = get_block_timestamp();
+            self.emit(PerkRedeemed {
+                donor,
+                partner_id,
+                perk_id,
+                operator,
+                redeemed_at: now
+            });
         }
     }
 }
