@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-// import Image from "next/image";
 
 import { usePartnerContext } from "~~/hooks/bloodworks/usePartnerContext";
 import {
@@ -10,6 +9,7 @@ import {
 } from "~~/hooks/bloodworks/usePartnerPerksMetadata";
 import { usePerkOnchainStatus } from "~~/hooks/bloodworks/usePerkOnchainStatus";
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-stark/useScaffoldWriteContract";
+import { usePartnerTotalRedemptions } from "~~/hooks/bloodworks/usePartnerRedemptions";
 
 type FormState = {
   perkId?: number; // optional; server can allocate
@@ -29,7 +29,7 @@ const defaultForm: FormState = {
   image: "/perks/placeholder.png",
   minDonations: 0,
   terms: "",
-  ctaLabel: "Redeem",
+  ctaLabel: "How to redeem", // ✅ no donor on-chain redeem implication
   category: "",
 };
 
@@ -60,6 +60,32 @@ function StatPill({ label, value }: { label: string; value: string }) {
   );
 }
 
+function StatusBadge({
+  perkExists,
+  perkEnabled,
+  isLoading,
+}: {
+  perkExists?: boolean;
+  perkEnabled?: boolean;
+  isLoading?: boolean;
+}) {
+  if (isLoading) return <span className="badge badge-ghost">Checking…</span>;
+
+  // If exists is explicitly false, it's not created on-chain
+  if (perkExists === false)
+    return <span className="badge badge-warning">Not created</span>;
+
+  // Exists but disabled
+  if (perkExists === true && perkEnabled === false)
+    return <span className="badge badge-ghost">Inactive</span>;
+
+  // Exists and enabled
+  if (perkExists === true && perkEnabled === true)
+    return <span className="badge badge-success">Active</span>;
+
+  return <span className="badge badge-ghost">—</span>;
+}
+
 function PerkRow({
   partnerId,
   perk,
@@ -72,19 +98,19 @@ function PerkRow({
   const { perkExists, perkEnabled, totalRedemptions, isLoading, error } =
     usePerkOnchainStatus(partnerId, perk.perkId);
 
-  // Configure writes once, pass args at call time (your hook supports overrides)
+  // Configure writes once, pass args at call time
   const { sendAsync: createPerkTx, isPending: isCreating } =
     useScaffoldWriteContract({
       contractName: "BloodworksCore",
       functionName: "create_perk",
-      args: [], // override per click
+      args: [],
     });
 
   const { sendAsync: setEnabledTx, isPending: isToggling } =
     useScaffoldWriteContract({
       contractName: "BloodworksCore",
       functionName: "set_perk_enabled",
-      args: [], // override per click
+      args: [],
     });
 
   const busy = isCreating || isToggling;
@@ -107,11 +133,13 @@ function PerkRow({
     onRefresh();
   };
 
+  const showCreate = perkExists === false;
+  const showToggle = perkExists === true;
+
   return (
     <div className="border border-base-300 bg-base-100 rounded-lg p-4 flex gap-4 items-start">
       <div className="w-16 h-16 rounded-lg overflow-hidden border border-base-300 bg-base-200 flex items-center justify-center">
         {perk.image ? (
-          // Use <img> for remote URLs to avoid Next/Image domain config during MVP
           <img
             src={perk.image}
             alt={perk.title}
@@ -127,7 +155,15 @@ function PerkRow({
       <div className="flex-1">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="font-semibold">{perk.title}</div>
+            <div className="flex items-center gap-2">
+              <div className="font-semibold">{perk.title}</div>
+              <StatusBadge
+                perkExists={perkExists}
+                perkEnabled={perkEnabled}
+                isLoading={isLoading}
+              />
+            </div>
+
             <div className="mt-1 flex flex-wrap gap-2">
               <StatPill label="perkId" value={String(perk.perkId)} />
               <StatPill
@@ -135,44 +171,29 @@ function PerkRow({
                 value={String(perk.minDonations ?? 0)}
               />
               <StatPill label="category" value={perk.category || "—"} />
+              <StatPill
+                label="redemptions"
+                value={
+                  isLoading
+                    ? "…"
+                    : totalRedemptions === undefined
+                      ? "—"
+                      : totalRedemptions.toString()
+                }
+              />
+            </div>
+
+            <div className="mt-1 text-xs opacity-60">
+              Metadata linked:{" "}
+              <span className="font-mono">
+                {perk.onchainCreated ? "true" : "false"}
+              </span>
             </div>
           </div>
 
-          <div className="text-right text-xs opacity-80 space-y-1">
-            <div>
-              Exists:{" "}
-              <span className="font-mono">
-                {isLoading
-                  ? "…"
-                  : perkExists === undefined
-                    ? "—"
-                    : perkExists
-                      ? "true"
-                      : "false"}
-              </span>
-            </div>
-            <div>
-              Enabled:{" "}
-              <span className="font-mono">
-                {isLoading
-                  ? "…"
-                  : perkEnabled === undefined
-                    ? "—"
-                    : perkEnabled
-                      ? "true"
-                      : "false"}
-              </span>
-            </div>
-            <div>
-              Redemptions:{" "}
-              <span className="font-mono">
-                {isLoading
-                  ? "…"
-                  : totalRedemptions === undefined
-                    ? "—"
-                    : totalRedemptions.toString()}
-              </span>
-            </div>
+          {/* Right-side compact meta */}
+          <div className="text-right text-xs opacity-70">
+            <div className="font-mono">partnerId: {partnerId}</div>
           </div>
         </div>
 
@@ -187,36 +208,62 @@ function PerkRow({
         ) : null}
 
         <div className="mt-3 flex flex-wrap gap-2 items-center">
+          {/* NOT CREATED */}
           {perkExists === false ? (
             <button
-              className={`btn btn-sm btn-primary ${busy ? "btn-disabled" : ""}`}
+              className="btn btn-sm btn-primary"
               onClick={createOnchain}
               disabled={busy}
             >
               {isCreating ? "Creating…" : "Create on-chain"}
             </button>
-          ) : (
+          ) : null}
+
+          {/* CREATED */}
+          {perkExists === true ? (
             <>
+              {/* ENABLE button (state-aware) */}
               <button
-                className={`btn btn-sm btn-outline ${busy ? "btn-disabled" : ""}`}
+                className={`btn btn-sm ${perkEnabled ? "btn-primary" : "btn-primary"}`}
                 onClick={() => setEnabled(true)}
-                disabled={busy}
+                disabled={busy || perkEnabled === true}
+                title={perkEnabled ? "Already enabled" : "Enable this perk"}
               >
-                Enable
+                {isToggling && perkEnabled === false
+                  ? "Enabling…"
+                  : perkEnabled
+                    ? "Enabled"
+                    : "Enable"}
               </button>
+
+              {/* DISABLE button (state-aware) */}
               <button
-                className={`btn btn-sm btn-outline ${busy ? "btn-disabled" : ""}`}
+                className="btn btn-sm btn-outline"
                 onClick={() => setEnabled(false)}
-                disabled={busy}
+                disabled={busy || perkEnabled === false}
+                title={
+                  perkEnabled === false
+                    ? "Already disabled"
+                    : "Disable this perk"
+                }
               >
-                Disable
+                {isToggling && perkEnabled === true
+                  ? "Disabling…"
+                  : perkEnabled === false
+                    ? "Disabled"
+                    : "Disable"}
               </button>
             </>
-          )}
+          ) : null}
 
-          <div className="text-xs opacity-60">
-            metadata:onchainCreated={perk.onchainCreated ? "true" : "false"}
-          </div>
+          {/* UNKNOWN / LOADING */}
+          {perkExists === undefined ? (
+            <div className="text-xs opacity-60">Loading on-chain status…</div>
+          ) : null}
+        </div>
+
+        <div className="mt-2 text-xs opacity-60">
+          Operators redeem perks on-chain; these counters update live.
         </div>
       </div>
     </div>
@@ -230,16 +277,21 @@ export default function PartnerPerksPage() {
   const { data, loading, err, refresh } = usePartnerPerksMetadata(partnerId);
   const perks = useMemo(() => data?.perks ?? [], [data]);
 
+  // ✅ on-chain partner total
+  const red = usePartnerTotalRedemptions(partnerId);
+
+  const totalPerks = perks.length;
+  const linkedOnchain = perks.filter((p) => p.onchainCreated).length;
+
   const [form, setForm] = useState<FormState>(defaultForm);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Configure create_perk writer once; override args after metadata upsert.
   const { sendAsync: createPerkTx, isPending: isCreating } =
     useScaffoldWriteContract({
       contractName: "BloodworksCore",
       functionName: "create_perk",
-      args: [], // override at call-time
+      args: [],
     });
 
   const submitCreate = async () => {
@@ -267,7 +319,7 @@ export default function PartnerPerksPage() {
               ? form.minDonations
               : 0,
             terms: form.terms,
-            ctaLabel: form.ctaLabel || "Redeem",
+            ctaLabel: form.ctaLabel || "How to redeem",
             category: form.category,
           },
         }),
@@ -307,13 +359,43 @@ export default function PartnerPerksPage() {
         <div>
           <h1 className="text-2xl font-semibold">Perks</h1>
           <div className="text-sm opacity-70">
-            Create metadata (JSON) + create perk on-chain, linked by perkId.
+            Manage perk metadata (JSON) and on-chain state. Operators handle
+            redemption.
           </div>
         </div>
 
         <button className="btn btn-sm btn-outline" onClick={refresh}>
           Refresh
         </button>
+      </div>
+
+      {/* ✅ Top stats strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="border border-base-300 bg-base-100 rounded-lg p-3">
+          <div className="text-xs opacity-70">partnerId</div>
+          <div className="mt-1 font-mono text-sm">{partnerId || "—"}</div>
+        </div>
+
+        <div className="border border-base-300 bg-base-100 rounded-lg p-3">
+          <div className="text-xs opacity-70">Total redemptions (on-chain)</div>
+          <div className="mt-1 text-lg font-bold">
+            {red.isLoading ? "…" : (red.totalRedemptions?.toString() ?? "—")}
+          </div>
+        </div>
+
+        <div className="border border-base-300 bg-base-100 rounded-lg p-3">
+          <div className="text-xs opacity-70">Perks (metadata)</div>
+          <div className="mt-1 text-lg font-bold">
+            {loading ? "…" : String(totalPerks)}
+          </div>
+        </div>
+
+        <div className="border border-base-300 bg-base-100 rounded-lg p-3">
+          <div className="text-xs opacity-70">Linked on-chain (metadata)</div>
+          <div className="mt-1 text-lg font-bold">
+            {loading ? "…" : String(linkedOnchain)}
+          </div>
+        </div>
       </div>
 
       {toast ? (
@@ -374,7 +456,7 @@ export default function PartnerPerksPage() {
 
           <label className="form-control">
             <div className="label">
-              <span className="label-text">Image path</span>
+              <span className="label-text">Image URL / path</span>
             </div>
             <input
               className="input input-bordered"
@@ -410,7 +492,7 @@ export default function PartnerPerksPage() {
             </div>
             <input
               className="input input-bordered"
-              placeholder="Redeem"
+              placeholder="How to redeem"
               value={form.ctaLabel}
               onChange={(e) =>
                 setForm((f) => ({ ...f, ctaLabel: e.target.value }))

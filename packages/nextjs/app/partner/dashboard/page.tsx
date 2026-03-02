@@ -2,6 +2,7 @@
 
 import { usePartnerContext } from "~~/hooks/bloodworks/usePartnerContext";
 import { usePartnerTotalRedemptions } from "~~/hooks/bloodworks/usePartnerRedemptions";
+import { usePartnerPerksMetadata } from "~~/hooks/bloodworks/usePartnerPerksMetadata";
 
 function StatCard({
   title,
@@ -33,6 +34,12 @@ export default function PartnerDashboard() {
   const { totalRedemptions, isLoading, error } =
     usePartnerTotalRedemptions(partnerId);
 
+  const perksMeta = usePartnerPerksMetadata(partnerId);
+
+  const totalPerks = perksMeta.data?.perks?.length ?? 0;
+  const onchainLinked =
+    perksMeta.data?.perks?.filter((p) => p.onchainCreated).length ?? 0;
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Partner Dashboard</h1>
@@ -56,6 +63,21 @@ export default function PartnerDashboard() {
         <StatCard
           title="Unique / Repeat Donors (off-chain)"
           sub="Phase 1: from events API"
+        />
+        <StatCard
+          title="Perks (metadata)"
+          value={perksMeta.loading ? undefined : String(totalPerks)}
+          sub="From JSON (Phase 1)"
+          loading={perksMeta.loading}
+          error={perksMeta.err ?? undefined}
+        />
+
+        <StatCard
+          title="Perks linked on-chain"
+          value={perksMeta.loading ? undefined : String(onchainLinked)}
+          sub="From JSON flag onchainCreated"
+          loading={perksMeta.loading}
+          error={perksMeta.err ?? undefined}
         />
       </div>
     </div>

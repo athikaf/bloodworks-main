@@ -17,21 +17,14 @@ export default function DonorPerksPage() {
   } = useScaffoldReadContract({
     contractName: "BloodworksCore",
     functionName: "get_status",
-    args: [donor], // ✅ always a tuple
+    args: donor ? [donor] : undefined, // ✅ safer
     enabled,
-    watch: false,
+    watch: false, // keep false for now (optional)
   });
 
-  // get_status returns: (issued, donation_count, last_ts, cooldown_end_ts, is_active)
   const donationCount = useMemo(() => {
     if (!statusRaw) return 0;
-
-    // Depending on your hook typing, statusRaw may be:
-    // - an array/tuple
-    // - an object-like tuple
-    // We safely pull index 1.
     const rawDonation = (statusRaw as any)[1];
-
     try {
       return Number(rawDonation ?? 0);
     } catch {

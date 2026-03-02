@@ -1,38 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
-import { useAccount } from "@starknet-react/core";
+import React, { useMemo, useState } from "react";
 import { Perk, PerkCard } from "./PerkCard";
+import { useAllPerksMetadata } from "~~/hooks/bloodworks/useAllPerksMetadata";
+
+// Optional: keep your modal if you want to show instructions / QR / perk details.
+// If you don’t want a modal, delete this import + related code.
 import { RedeemModal } from "./RedeemModal";
 
 type Props = {
-  donationCount: number; // from get_status / DonorStatusCard
+  donationCount: number;
 };
 
-const PERKS: Perk[] = [
-  {
-    id: 1,
-    title: "Free Tim Hortons Coffee",
-    description: "One coffee on us — thank you for donating.",
-    partnerName: "Tim Hortons",
-    partnerId: 101,
-    minDonations: 1,
-  },
-  {
-    id: 2, // ✅ FIX: was id: 1 again — must be unique per perk
-    title: "VIP Blue Jays Tickets",
-    description: "2 VIP tickets after consistent donations.",
-    partnerName: "Scotiabank / Blue Jays",
-    partnerId: 202,
-    minDonations: 5,
-  },
-];
-
 export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
-  const { address, status } = useAccount();
-  const donor = status === "connected" ? address : undefined;
-
+  const { perks, loading, err, refresh } = useAllPerksMetadata();
   const [selectedPerk, setSelectedPerk] = useState<Perk | undefined>(undefined);
+
+  const normalized: Perk[] = useMemo(() => {
+    return (perks || []).map((p: any) => ({
+      partnerId: Number(p.partnerId),
+      partnerName: p.partnerName || "",
+      perkId: Number(p.perkId),
+      title: p.title,
+      description: p.description || "",
+      image: p.image || "",
+      minDonations: Number(p.minDonations ?? 0),
+      category: p.category || "",
+      ctaLabel: p.ctaLabel || "How to redeem",
+    }));
+  }, [perks]);
+
+  // Eligibility filter (client-side)
+  const eligibleFirst = useMemo(() => {
+    return normalized.slice().sort((a, b) => {
+      const aOk = donationCount >= a.minDonations;
+      const bOk = donationCount >= b.minDonations;
+      if (aOk !== bOk) return aOk ? -1 : 1;
+      if (a.partnerId !== b.partnerId) return a.partnerId - b.partnerId;
+      return a.perkId - b.perkId;
+    });
+  }, [normalized, donationCount]);
 
   return (
     <div className="w-full">
@@ -40,28 +47,44 @@ export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
         <div className="text-sm opacity-70">
           Donations: <span className="font-semibold">{donationCount}</span>
         </div>
+
+        <button className="btn btn-sm btn-outline" onClick={refresh}>
+          Refresh
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-        {PERKS.map((perk) => {
-          const key = `${perk.partnerId}:${perk.id}`;
+      {err ? (
+        <div className="card bg-base-100 border border-base-300 mt-4">
+          <div className="card-body">
+            <p className="text-sm text-error">
+              Couldn’t load perks metadata: {err}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
-          return (
-            <PerkCard
-              key={key}
-              perk={perk}
-              donationCount={donationCount}
-              donorAddress={donor}
-              onRedeemClick={(p) => setSelectedPerk(p)}
-            />
-          );
-        })}
+      {loading ? (
+        <div className="card bg-base-100 border border-base-300 mt-4">
+          <div className="card-body">
+            <p className="text-sm">Loading perks…</p>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+        {eligibleFirst.map((perk) => (
+          <PerkCard
+            key={`${perk.partnerId}:${perk.perkId}`}
+            perk={perk}
+            donationCount={donationCount}
+            onActionClick={(p) => setSelectedPerk(p)}
+          />
+        ))}
       </div>
 
       <RedeemModal
         open={!!selectedPerk}
         perk={selectedPerk}
-        donorAddress={donor}
         onClose={() => setSelectedPerk(undefined)}
       />
     </div>

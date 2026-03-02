@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useAccount } from "@starknet-react/core";
 import { Perk } from "./PerkCard";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   perk?: Perk;
-  donorAddress?: string;
 };
 
 const EXPIRY_SECONDS = 45;
@@ -21,32 +21,28 @@ function shortAddr(a?: string) {
 function generateClaimCode(donor: string, perk: Perk) {
   const nonce = Math.random().toString(16).slice(2);
   const ts = Date.now().toString(16);
-  return `BW-${perk.partnerId}-${perk.id}-${donor.slice(2, 8)}-${ts}-${nonce}`.toUpperCase();
+  // use perk.perkId (new model)
+  return `BW-${perk.partnerId}-${perk.perkId}-${donor.slice(2, 8)}-${ts}-${nonce}`.toUpperCase();
 }
 
-export const RedeemModal: React.FC<Props> = ({
-  open,
-  onClose,
-  perk,
-  donorAddress,
-}) => {
+export const RedeemModal: React.FC<Props> = ({ open, onClose, perk }) => {
+  const { address, status } = useAccount();
+  const donorAddress = status === "connected" ? address : undefined;
+
   const [secondsLeft, setSecondsLeft] = useState(EXPIRY_SECONDS);
   const [claimCode, setClaimCode] = useState<string>("");
 
-  const canRender = open && perk && donorAddress;
+  // Can render as long as wallet connected + we have a perk selected
+  const canRender = open && !!perk && !!donorAddress;
 
   useEffect(() => {
     if (!canRender) return;
 
-    // reset every open
     setSecondsLeft(EXPIRY_SECONDS);
     setClaimCode(generateClaimCode(donorAddress!, perk!));
 
     const t = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) return 0;
-        return s - 1;
-      });
+      setSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
     }, 1000);
 
     return () => clearInterval(t);
@@ -56,14 +52,49 @@ export const RedeemModal: React.FC<Props> = ({
 
   const instructions = useMemo(() => {
     if (!perk) return [];
+    const partnerLabel = perk.partnerName || `Partner #${perk.partnerId}`;
     return [
-      `Show this code to the cashier at ${perk.partnerName}.`,
-      `They will confirm your redemption in their Partner portal (on-chain).`,
+      `Show this screen to the operator at ${partnerLabel}.`,
+      `They will look up your donor address and redeem the perk in the Operator portal (on-chain).`,
       `If the timer expires, tap “Refresh code”.`,
     ];
   }, [perk]);
 
   if (!open) return null;
+
+  // If wallet not connected, still show modal but with a clear prompt
+  if (!donorAddress || !perk) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <button
+          className="absolute inset-0 bg-black/50"
+          aria-label="Close modal"
+          onClick={onClose}
+        />
+        <div className="relative w-full max-w-lg bg-base-100 border border-base-300 rounded-2xl p-5 shadow-xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold">Redeem perk</h2>
+              <p className="text-sm opacity-80 mt-1">
+                {perk ? perk.title : "Select a perk"}
+              </p>
+            </div>
+            <button className="btn btn-sm" onClick={onClose}>
+              Close
+            </button>
+          </div>
+
+          <div className="mt-4 card bg-base-100 border border-base-300">
+            <div className="card-body">
+              <p className="text-sm">
+                Connect your wallet to generate a claim code.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -79,7 +110,7 @@ export const RedeemModal: React.FC<Props> = ({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold">Redeem perk</h2>
-            <p className="text-sm opacity-80 mt-1">{perk ? perk.title : ""}</p>
+            <p className="text-sm opacity-80 mt-1">{perk.title}</p>
           </div>
           <button className="btn btn-sm" onClick={onClose}>
             Close
@@ -91,11 +122,24 @@ export const RedeemModal: React.FC<Props> = ({
           <div className="font-mono text-sm break-all">
             {shortAddr(donorAddress)}
           </div>
-
+          <button
+            className="btn btn-xs btn-outline mt-2"
+            onClick={() => navigator.clipboard.writeText(donorAddress)}
+          >
+            Copy donor address
+          </button>
           <div className="mt-3 text-xs opacity-70">Claim code</div>
           <div className="font-mono text-sm break-all mt-1">
             {claimCode || "—"}
           </div>
+
+          <button
+            className="btn btn-xs btn-outline mt-2"
+            onClick={() => navigator.clipboard.writeText(claimCode)}
+            disabled={!claimCode}
+          >
+            Copy claim code
+          </button>
 
           <div className="mt-3 flex items-center justify-between">
             <div
@@ -111,7 +155,6 @@ export const RedeemModal: React.FC<Props> = ({
             <button
               className="btn btn-sm btn-outline"
               onClick={() => {
-                if (!perk || !donorAddress) return;
                 setSecondsLeft(EXPIRY_SECONDS);
                 setClaimCode(generateClaimCode(donorAddress, perk));
               }}
@@ -130,8 +173,8 @@ export const RedeemModal: React.FC<Props> = ({
           </ul>
 
           <p className="text-xs opacity-60 mt-3">
-            Note: This is a demo claim code. In the hardened version, the code
-            will be server-signed and partner-scanned to prevent misuse.
+            Note: This is a demo claim code. Later we’ll server-sign codes and
+            have the operator scan/verify.
           </p>
         </div>
       </div>

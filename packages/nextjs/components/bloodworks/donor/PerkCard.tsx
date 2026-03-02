@@ -1,132 +1,120 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldReadContract";
+import { usePerkOnchainStatus } from "~~/hooks/bloodworks/usePerkOnchainStatus";
 
 export type Perk = {
-  id: number;
+  // Align to your metadata model
+  perkId: number;
   title: string;
-  description: string;
-  partnerName: string;
+  description?: string;
+  image?: string;
+  partnerName?: string;
   partnerId: number;
   minDonations: number;
+  category?: string;
+  ctaLabel?: string;
 };
 
 type Props = {
   perk: Perk;
   donationCount: number;
-  donorAddress?: string;
-  onRedeemClick?: (perk: Perk) => void;
+  onActionClick?: (perk: Perk) => void; // optional (open modal / show instructions)
 };
 
 export const PerkCard: React.FC<Props> = ({
   perk,
   donationCount,
-  donorAddress,
-  onRedeemClick,
+  onActionClick,
 }) => {
-  // 🚦 Unlock condition
-  console.log("[PerkCard]", perk.title, {
-    donationCount,
-    donationCountType: typeof donationCount,
-    minDonations: perk.minDonations,
-    minType: typeof perk.minDonations,
-  });
-  const isUnlocked = donationCount >= perk.minDonations;
+  const isUnlocked = donationCount >= (perk.minDonations ?? 0);
 
-  /**
-   * 🧠 Read onchain redemption status
-   * Only runs when:
-   *  - wallet connected
-   *  - perk unlocked
-   */
-  const { data: redeemedRaw, isLoading } = useScaffoldReadContract({
-    contractName: "BloodworksCore",
-    functionName: "is_redeemed",
-    args: [donorAddress, perk.partnerId, perk.id], // ✅ always a tuple
-    enabled: !!donorAddress && isUnlocked,
-    watch: false,
-  });
+  // On-chain: exists/enabled + live redemption counter
+  const { perkExists, perkEnabled, totalRedemptions, isLoading } =
+    usePerkOnchainStatus(perk.partnerId, perk.perkId);
 
-  /**
-   * 🔐 Safe Starknet bool parsing
-   * Handles:
-   *  - boolean
-   *  - "0"/"1"
-   *  - 0n/1n
-   *  - ["0"]/["1"]
-   */
-  const isRedeemed = useMemo(() => {
-    if (redeemedRaw === undefined || redeemedRaw === null) return false;
+  // Only show perks that are actually enabled on-chain
+  const isLiveEnabled = perkExists === true && perkEnabled === true;
 
-    if (typeof redeemedRaw === "boolean") return redeemedRaw;
+  const badge = useMemo(() => {
+    if (isLoading) return { text: "Checking…", cls: "badge-ghost" };
+    if (!isLiveEnabled) return { text: "Not active", cls: "badge-ghost" };
+    if (!isUnlocked)
+      return {
+        text: `Locked — needs ${perk.minDonations}`,
+        cls: "badge-ghost",
+      };
+    return { text: "Eligible", cls: "badge-success" };
+  }, [isLoading, isLiveEnabled, isUnlocked, perk.minDonations]);
 
-    if (typeof redeemedRaw === "string") {
-      return redeemedRaw === "1" || redeemedRaw === "0x1";
-    }
+  // In this protocol, donor doesn't execute redeem tx; operator does.
+  const canAction = isLiveEnabled && isUnlocked;
 
-    if (typeof redeemedRaw === "bigint") {
-      return redeemedRaw === 1n;
-    }
-
-    if (Array.isArray(redeemedRaw) && redeemedRaw.length > 0) {
-      const v = redeemedRaw[0];
-
-      if (typeof v === "bigint") return v === 1n;
-      if (typeof v === "string") return v === "1" || v === "0x1";
-    }
-
-    return false;
-  }, [redeemedRaw]);
-
-  const showRedeemButton =
-    !!donorAddress && isUnlocked && !isRedeemed && !isLoading;
+  // If you prefer hiding inactive perks entirely, PerksGrid will already filter.
+  // This is just extra safety:
+  if (!isLiveEnabled) return null;
 
   return (
     <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-all duration-200">
+      <span className="badge badge-outline text-xs">Live</span>
       <div className="card-body">
-        {/* Header */}
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="card-title text-base">{perk.title}</h3>
-            <p className="text-sm opacity-80">{perk.description}</p>
+          <div className="flex gap-3">
+            <div className="w-14 h-14 rounded-lg overflow-hidden border border-base-300 bg-base-200 flex items-center justify-center">
+              {perk.image ? (
+                <img
+                  src={perk.image}
+                  alt={perk.title}
+                  className="w-14 h-14 object-cover"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="text-xs opacity-60">No image</div>
+              )}
+            </div>
 
-            <p className="text-xs opacity-60 mt-2">
-              Partner: <span className="font-medium">{perk.partnerName}</span>
-            </p>
+            <div>
+              <h3 className="card-title text-base">{perk.title}</h3>
+              {perk.description ? (
+                <p className="text-sm opacity-80">{perk.description}</p>
+              ) : null}
+
+              <p className="text-xs opacity-60 mt-2">
+                Partner:{" "}
+                <span className="font-medium">
+                  {perk.partnerName || `#${perk.partnerId}`}
+                </span>
+                {perk.category ? <> • {perk.category}</> : null}
+              </p>
+
+              <p className="text-xs opacity-60 mt-1">
+                Live redemptions:{" "}
+                <span className="font-mono">
+                  {totalRedemptions === undefined
+                    ? "—"
+                    : totalRedemptions.toString()}
+                </span>
+              </p>
+            </div>
           </div>
 
-          {/* Status Badge */}
-          {!isUnlocked ? (
-            <span className="badge badge-ghost">
-              Locked — needs {perk.minDonations}
-            </span>
-          ) : isLoading ? (
-            <span className="badge badge-ghost">Checking…</span>
-          ) : isRedeemed ? (
-            <span className="badge badge-success">Redeemed</span>
-          ) : (
-            <span className="badge badge-primary">Unlocked</span>
-          )}
+          <span className={`badge ${badge.cls}`}>{badge.text}</span>
         </div>
 
-        {/* Action */}
         <div className="mt-4 flex justify-end">
           <button
             className="btn btn-sm btn-primary"
-            disabled={!showRedeemButton}
-            onClick={() => onRedeemClick?.(perk)}
+            disabled={!canAction}
+            onClick={() => onActionClick?.(perk)}
           >
-            Redeem
+            {perk.ctaLabel || "How to redeem"}
           </button>
         </div>
 
-        {/* Wallet hint */}
-        {!donorAddress && (
-          <p className="text-xs opacity-60 mt-2">
-            Connect wallet to see redemption status.
-          </p>
-        )}
+        <p className="text-xs opacity-60 mt-2">
+          Redemption is completed by an operator at the partner location.
+        </p>
       </div>
     </div>
   );
