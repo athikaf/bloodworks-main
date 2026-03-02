@@ -1,0 +1,29 @@
+{
+  "partnerId": 1,
+  "partnerName": "",
+  "updatedAt": "2026-03-02T13:05:56.818Z",
+  "perks": [
+    {
+      "perkId": 1,
+      "title": "Mocha Ice Capp (Any size)",
+      "description": "Thanks!",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSApGnuxIx6bEDvT9trNkbbAza00iP5PkDovw&s",
+      "minDonations": 1,
+      "terms": "",
+      "ctaLabel": "Redeem",
+      "category": "Drink",
+      "onchainCreated": true
+    },
+    {
+      "perkId": 101,
+      "title": "Mocha Iced Capp (Any Size)",
+      "description": "Thank you for donating!!",
+      "image": "https://timhortons.co.th/wp-content/uploads/2020/02/Mocha-Iced-Capp-min.png",
+      "minDonations": 1,
+      "terms": "",
+      "ctaLabel": "Redeem",
+      "category": "Food & Drink",
+      "onchainCreated": true
+    }
+  ]
+}

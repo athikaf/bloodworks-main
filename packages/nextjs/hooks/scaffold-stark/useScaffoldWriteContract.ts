@@ -96,7 +96,6 @@ export const useScaffoldWriteContract = <
       chain?.id,
       deployedContractData,
       functionName,
-      sendTransactionInstance,
       sendTxnWrapper,
       targetNetwork.id,
     ],
