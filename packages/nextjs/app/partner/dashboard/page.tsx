@@ -1,8 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import { usePartnerContext } from "~~/hooks/bloodworks/usePartnerContext";
 import { usePartnerTotalRedemptions } from "~~/hooks/bloodworks/usePartnerRedemptions";
 import { usePartnerPerksMetadata } from "~~/hooks/bloodworks/usePartnerPerksMetadata";
+import { usePartnerOperators } from "~~/hooks/bloodworks/usePartnerOperators";
+
+import { useEnabledOperatorCount } from "~~/hooks/bloodworks/useEnabledOperatorCount";
 
 function StatCard({
   title,
@@ -31,14 +35,26 @@ function StatCard({
 
 export default function PartnerDashboard() {
   const { partnerId } = usePartnerContext();
-  const { totalRedemptions, isLoading, error } =
-    usePartnerTotalRedemptions(partnerId);
 
+  // on-chain total redemptions
+  const red = usePartnerTotalRedemptions(partnerId);
+
+  // perks metadata
   const perksMeta = usePartnerPerksMetadata(partnerId);
-
   const totalPerks = perksMeta.data?.perks?.length ?? 0;
   const onchainLinked =
     perksMeta.data?.perks?.filter((p) => p.onchainCreated).length ?? 0;
+
+  // operators list (Phase 1 JSON)
+  const ops = usePartnerOperators(partnerId);
+  const operatorCount = ops.operators.length;
+
+  const pidLabel = partnerId ? `partnerId = ${partnerId}` : undefined;
+
+  const enabledOps = useEnabledOperatorCount(
+    ops.operators.map((o) => o.address),
+    { pollMs: 5000 },
+  );
 
   return (
     <div className="space-y-4">
@@ -48,22 +64,42 @@ export default function PartnerDashboard() {
         <StatCard
           title="Total Redemptions (on-chain)"
           value={
-            totalRedemptions !== undefined
-              ? totalRedemptions.toString()
+            red.totalRedemptions !== undefined
+              ? red.totalRedemptions.toString()
               : undefined
           }
-          sub={partnerId ? `partnerId = ${partnerId}` : undefined}
-          loading={isLoading}
+          sub={pidLabel}
+          loading={red.isLoading}
           error={
-            error ? "Failed to read get_partner_total_redemptions" : undefined
+            red.error
+              ? "Failed to read get_partner_total_redemptions"
+              : undefined
           }
         />
 
-        <StatCard title="Top Perks (hybrid)" sub="Phase 1: from events API" />
         <StatCard
-          title="Unique / Repeat Donors (off-chain)"
-          sub="Phase 1: from events API"
+          title="Operators (listed)"
+          value={ops.loading ? undefined : String(operatorCount)}
+          sub="From JSON list"
+          loading={ops.loading}
+          error={ops.err ?? undefined}
         />
+
+        <StatCard
+          title="Operators (enabled on-chain)"
+          value={
+            enabledOps.isLoading ? undefined : String(enabledOps.enabledCount)
+          }
+          sub="Live from RoleRegistry (polled)"
+          loading={enabledOps.isLoading}
+          // error={
+          //   enabledOps.error && !enabledOps.isLoading
+          //     ? "Failed to read is_operator_enabled"
+          //     : undefined
+          // }
+          error={enabledOps.error ?? undefined}
+        />
+
         <StatCard
           title="Perks (metadata)"
           value={perksMeta.loading ? undefined : String(totalPerks)}
@@ -79,6 +115,20 @@ export default function PartnerDashboard() {
           loading={perksMeta.loading}
           error={perksMeta.err ?? undefined}
         />
+
+        <StatCard
+          title="Top Perks (hybrid)"
+          sub="Phase 1: optional (events API later)"
+        />
+        <StatCard
+          title="Unique / Repeat Donors (off-chain)"
+          sub="Phase 1: optional (events API later)"
+        />
+      </div>
+
+      <div className="text-xs opacity-60">
+        Note: Redemptions are updated on-chain by operators. Operator counts
+        come from a lightweight Phase-1 JSON list.
       </div>
     </div>
   );
