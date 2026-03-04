@@ -5,6 +5,15 @@ import { useAccount } from "@starknet-react/core";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldReadContract";
 import { PerksGrid } from "~~/components/bloodworks/donor/PerksGrid";
 
+function toBool(x: any): boolean {
+  if (x === undefined || x === null) return false;
+  if (typeof x === "boolean") return x;
+  if (typeof x === "bigint") return x === 1n;
+  if (typeof x === "number") return x === 1;
+  if (typeof x === "string") return x === "1" || x === "0x1";
+  return false;
+}
+
 export default function DonorPerksPage() {
   const { address, status } = useAccount();
   const donor = status === "connected" ? address : undefined;
@@ -17,9 +26,9 @@ export default function DonorPerksPage() {
   } = useScaffoldReadContract({
     contractName: "BloodworksCore",
     functionName: "get_status",
-    args: donor ? [donor] : undefined, // ✅ safer
+    args: donor ? [donor] : undefined,
     enabled,
-    watch: false, // keep false for now (optional)
+    watch: false,
   });
 
   const donationCount = useMemo(() => {
@@ -30,6 +39,12 @@ export default function DonorPerksPage() {
     } catch {
       return 0;
     }
+  }, [statusRaw]);
+
+  const isActive = useMemo(() => {
+    if (!statusRaw) return false;
+    const rawActive = (statusRaw as any)[4];
+    return toBool(rawActive);
   }, [statusRaw]);
 
   return (
@@ -61,7 +76,7 @@ export default function DonorPerksPage() {
           </div>
         </div>
       ) : (
-        <PerksGrid donationCount={donationCount} />
+        <PerksGrid donationCount={donationCount} isActive={isActive} />
       )}
     </div>
   );

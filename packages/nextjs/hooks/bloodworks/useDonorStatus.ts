@@ -25,31 +25,69 @@ function toNum(x: unknown): number | undefined {
   }
 }
 
+export type DonorStatusParsed = {
+  issued?: boolean;
+  donationCount: number;
+  lastDonationTs: number;
+  cooldownEndTs: number;
+  active?: boolean;
+};
+
 /**
+ * Generic: read status for ANY donor address (operator redeem uses this)
  * get_status returns: (issued, donation_count, last_donation_ts, cooldown_end_ts, active)
  */
-export function useDonorStatus() {
-  const { address, status } = useAccount();
-  const isConnected = status === "connected" && !!address;
+export function useDonorStatusByAddress(donor?: string) {
+  const enabled = !!donor;
 
   const read = useScaffoldReadContract({
     contractName: "BloodworksCore",
     functionName: "get_status",
-    args: address ? [address] : undefined,
-    enabled: isConnected,
+    args: donor ? [donor] : undefined,
+    enabled,
     watch: true,
   });
 
-  const parsed = useMemo(() => {
+  const parsed = useMemo<DonorStatusParsed | undefined>(() => {
     const d = read.data as any;
     if (!d) return undefined;
 
-    // Support tuple arrays or object-like returns
-    const issuedRaw = Array.isArray(d) ? d[0] : d.issued;
-    const countRaw = Array.isArray(d) ? d[1] : d.donation_count;
-    const lastRaw = Array.isArray(d) ? d[2] : d.last_donation_ts;
-    const endRaw = Array.isArray(d) ? d[3] : d.cooldown_end_ts;
-    const activeRaw = Array.isArray(d) ? d[4] : d.active;
+    const getAt = (idx: number, named?: string[]) => {
+      // 1) array tuple
+      if (Array.isArray(d)) return d[idx];
+
+      // 2) object tuple with numeric keys
+      if (typeof d === "object") {
+        if (idx in d) return d[idx];
+        const k = String(idx);
+        if (k in d) return d[k];
+
+        // 3) object with named keys (ABI-dependent)
+        if (named) {
+          for (const name of named) {
+            if (name in d) return d[name];
+          }
+        }
+      }
+
+      return undefined;
+    };
+
+    const issuedRaw = getAt(0, ["issued", "issued_", "is_issued"]);
+    const countRaw = getAt(1, [
+      "donation_count",
+      "donationCount",
+      "count",
+      "count_",
+    ]);
+    const lastRaw = getAt(2, ["last_donation_ts", "lastDonationTs", "last_"]);
+    const endRaw = getAt(3, [
+      "cooldown_end_ts",
+      "cooldownEndTs",
+      "end_",
+      "cooldown_",
+    ]);
+    const activeRaw = getAt(4, ["active", "is_active", "isActive", "active_"]);
 
     return {
       issued: toBool(issuedRaw),
@@ -61,10 +99,29 @@ export function useDonorStatus() {
   }, [read.data]);
 
   return {
-    address,
-    isConnected,
-    isLoading: isConnected ? read.isLoading : false,
+    donor,
+    enabled,
+    isLoading: enabled ? read.isLoading : false,
     error: read.error,
     status: parsed,
+  };
+}
+
+/**
+ * Wrapper: preserves your existing behavior/API for the connected wallet.
+ * This keeps donor dashboard etc. unchanged.
+ */
+export function useDonorStatus() {
+  const { address, status } = useAccount();
+  const isConnected = status === "connected" && !!address;
+
+  const byAddr = useDonorStatusByAddress(isConnected ? address : undefined);
+
+  return {
+    address,
+    isConnected,
+    isLoading: isConnected ? byAddr.isLoading : false,
+    error: byAddr.error,
+    status: byAddr.status,
   };
 }

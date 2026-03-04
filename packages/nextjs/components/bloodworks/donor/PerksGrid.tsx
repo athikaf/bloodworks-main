@@ -3,16 +3,14 @@
 import React, { useMemo, useState } from "react";
 import { Perk, PerkCard } from "./PerkCard";
 import { useAllPerksMetadata } from "~~/hooks/bloodworks/useAllPerksMetadata";
-
-// Optional: keep your modal if you want to show instructions / QR / perk details.
-// If you don’t want a modal, delete this import + related code.
 import { RedeemModal } from "./RedeemModal";
 
 type Props = {
   donationCount: number;
+  isActive: boolean; // ✅ pass from donor/perks page
 };
 
-export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
+export const PerksGrid: React.FC<Props> = ({ donationCount, isActive }) => {
   const { perks, loading, err, refresh } = useAllPerksMetadata();
   const [selectedPerk, setSelectedPerk] = useState<Perk | undefined>(undefined);
 
@@ -30,8 +28,7 @@ export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
     }));
   }, [perks]);
 
-  // Eligibility filter (client-side)
-  const eligibleFirst = useMemo(() => {
+  const sorted = useMemo(() => {
     return normalized.slice().sort((a, b) => {
       const aOk = donationCount >= a.minDonations;
       const bOk = donationCount >= b.minDonations;
@@ -46,6 +43,11 @@ export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
       <div className="flex items-end justify-between">
         <div className="text-sm opacity-70">
           Donations: <span className="font-semibold">{donationCount}</span>
+          {" · "}
+          Window:{" "}
+          <span className="font-semibold">
+            {isActive ? "Active" : "Inactive"}
+          </span>
         </div>
 
         <button className="btn btn-sm btn-outline" onClick={refresh}>
@@ -72,11 +74,12 @@ export const PerksGrid: React.FC<Props> = ({ donationCount }) => {
       ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-        {eligibleFirst.map((perk) => (
+        {sorted.map((perk) => (
           <PerkCard
             key={`${perk.partnerId}:${perk.perkId}`}
             perk={perk}
             donationCount={donationCount}
+            isActive={isActive} // ✅ here
             onActionClick={(p) => setSelectedPerk(p)}
           />
         ))}

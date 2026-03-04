@@ -38,6 +38,10 @@ mod BloodworksCore {
     const ERR_PERK_DISABLED: felt252 = 'PERK_DISABLED';
     const ERR_NOT_AUTHORIZED: felt252 = 'NOT_AUTHORIZED';
 
+    // ✅ cooldown-window redeem guard
+    const ERR_NOT_ACTIVE: felt252 = 'NOT_ACTIVE';
+    const ERR_ALREADY_REDEEMED_THIS_WINDOW: felt252 = 'REDEEMED_THIS_WINDOW';
+
     // -------------------------
     // RoleRegistry interface (aligned to YOUR RoleRegistry)
     // -------------------------
@@ -66,8 +70,11 @@ mod BloodworksCore {
         cooldown_end_ts: Map<ContractAddress, u64>,
 
         // minimal on-chain perk state
-        perk_exists: Map<(u32, u32), bool>,          // (partner_id, perk_id)
-        perk_enabled: Map<(u32, u32), bool>,         // (partner_id, perk_id)
+        perk_exists: Map<(u32, u32), bool>,  // (partner_id, perk_id)
+        perk_enabled: Map<(u32, u32), bool>, // (partner_id, perk_id)
+
+        // ✅ last redeemed timestamp per (donor, partner_id, perk_id)
+        last_redeemed_ts: Map<(ContractAddress, u32, u32), u64>,
 
         // minimal on-chain counters
         perk_total_redemptions: Map<(u32, u32), u64>, // (partner_id, perk_id)
@@ -193,6 +200,23 @@ mod BloodworksCore {
         (partner_id, perk_id)
     }
 
+    fn redeem_key(donor: ContractAddress, partner_id: u32, perk_id: u32) -> (ContractAddress, u32, u32) {
+        (donor, partner_id, perk_id)
+    }
+
+    // Window start for the CURRENT cooldown window:
+    // - if end_ts == 0 => no window
+    // - else window_start = end_ts - cooldown_seconds
+    fn current_window_start(self: @ContractState, donor: ContractAddress) -> u64 {
+        let end_ts = self.cooldown_end_ts.read(donor);
+        if end_ts == 0 {
+            return 0;
+        }
+        let cd = self.cooldown_seconds.read();
+        // cd > 0 by constructor; end_ts should always be >= cd (since set as now + cd)
+        end_ts - cd
+    }
+
     // -------------------------
     // Public interface
     // -------------------------
@@ -212,6 +236,10 @@ mod BloodworksCore {
         fn set_perk_enabled(ref self: TContractState, partner_id: u32, perk_id: u32, enabled: bool);
         fn perk_exists(self: @TContractState, partner_id: u32, perk_id: u32) -> bool;
         fn perk_enabled(self: @TContractState, partner_id: u32, perk_id: u32) -> bool;
+
+        // ✅ redeemed (per current cooldown window)
+        fn is_redeemed(self: @TContractState, donor: ContractAddress, partner_id: u32, perk_id: u32) -> bool;
+        fn get_last_redeemed_ts(self: @TContractState, donor: ContractAddress, partner_id: u32, perk_id: u32) -> u64;
 
         // counters
         fn get_perk_total_redemptions(self: @TContractState, partner_id: u32, perk_id: u32) -> u64;
@@ -309,6 +337,29 @@ mod BloodworksCore {
         }
 
         // -------------------------
+        // Redeemed (per current cooldown window)
+        // -------------------------
+        fn get_last_redeemed_ts(self: @ContractState, donor: ContractAddress, partner_id: u32, perk_id: u32) -> u64 {
+            self.last_redeemed_ts.read(redeem_key(donor, partner_id, perk_id))
+        }
+
+        // Returns true only if redeemed within the CURRENT cooldown window.
+        // If donor is not active (no current window), returns false.
+        fn is_redeemed(self: @ContractState, donor: ContractAddress, partner_id: u32, perk_id: u32) -> bool {
+            if !self.is_active(donor) {
+                return false;
+            }
+
+            let window_start = current_window_start(self, donor);
+            if window_start == 0 {
+                return false;
+            }
+
+            let last = self.last_redeemed_ts.read(redeem_key(donor, partner_id, perk_id));
+            last >= window_start
+        }
+
+        // -------------------------
         // Counters
         // -------------------------
         fn get_perk_total_redemptions(self: @ContractState, partner_id: u32, perk_id: u32) -> u64 {
@@ -329,9 +380,22 @@ mod BloodworksCore {
             // keep system coherent (no medical data stored)
             assert(self.issued.read(donor), ERR_NOT_ISSUED);
 
+            // Option A: only redeem during active cooldown window
+            assert(self.is_active(donor), ERR_NOT_ACTIVE);
+
             let k = perk_key(partner_id, perk_id);
             assert(self.perk_exists.read(k), ERR_PERK_NOT_FOUND);
             assert(self.perk_enabled.read(k), ERR_PERK_DISABLED);
+
+            // ✅ one redeem per donor/perk/per cooldown window
+            let window_start = current_window_start(@self, donor);
+            // window_start should be nonzero because is_active implies end_ts != 0
+            let rk = redeem_key(donor, partner_id, perk_id);
+            let last = self.last_redeemed_ts.read(rk);
+            assert(last < window_start, ERR_ALREADY_REDEEMED_THIS_WINDOW);
+
+            let now = get_block_timestamp();
+            self.last_redeemed_ts.write(rk, now);
 
             // increment counters
             let perk_prev = self.perk_total_redemptions.read(k);
@@ -340,7 +404,6 @@ mod BloodworksCore {
             let partner_prev = self.partner_total_redemptions.read(partner_id);
             self.partner_total_redemptions.write(partner_id, partner_prev + 1);
 
-            let now = get_block_timestamp();
             self.emit(PerkRedeemed {
                 donor,
                 partner_id,

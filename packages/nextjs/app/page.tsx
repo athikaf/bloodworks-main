@@ -10,6 +10,7 @@ const ROLE_DONOR = 0;
 const ROLE_PARTNER = 1;
 const ROLE_BLOODBANK = 2;
 const ROLE_PLATFORM_ADMIN = 3;
+const ROLE_OPERATOR = 4;
 
 const Home = () => {
   const router = useRouter();
@@ -52,6 +53,7 @@ const Home = () => {
     if (roleNum === ROLE_DONOR) router.replace("/donor/dashboard");
     else if (roleNum === ROLE_PARTNER) router.replace("/partner/dashboard");
     else if (roleNum === ROLE_BLOODBANK) router.replace("/bloodbank/dashboard");
+    else if (roleNum === ROLE_OPERATOR) router.replace("/operator/dashboard");
     else if (roleNum === ROLE_PLATFORM_ADMIN)
       router.replace("/admin/dashboard");
   }, [isConnected, isLoading, error, roleNum, router, pathname]);
