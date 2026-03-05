@@ -7,7 +7,7 @@ const deployedContracts = {
   devnet: {
     RoleRegistry: {
       address:
-        "0x58ab46553eaf33128f6b597dea772a467f78bc26b1516eec119669419c932cd",
+        "0x12fede2d270a16c9dfa4a3fb1b1a1b2f953762d5fbd7c1f44d0d64e8b8f7e99",
       abi: [
         {
           type: "impl",
@@ -401,7 +401,7 @@ const deployedContracts = {
     },
     BloodworksCore: {
       address:
-        "0x4ea0107aa153afa4300c11ed75ff486b1ef6c4b5bdf485ec287a8768855e931",
+        "0x23e9f970262112bfdcfa061f065beab0b9908f528ef9102bf047c4b6055ef2e",
       abi: [
         {
           type: "impl",
@@ -566,6 +566,54 @@ const deployedContracts = {
               outputs: [
                 {
                   type: "core::bool",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "is_redeemed",
+              inputs: [
+                {
+                  name: "donor",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "partner_id",
+                  type: "core::integer::u32",
+                },
+                {
+                  name: "perk_id",
+                  type: "core::integer::u32",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::bool",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "get_last_redeemed_ts",
+              inputs: [
+                {
+                  name: "donor",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "partner_id",
+                  type: "core::integer::u32",
+                },
+                {
+                  name: "perk_id",
+                  type: "core::integer::u32",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::integer::u64",
                 },
               ],
               state_mutability: "view",
@@ -792,7 +840,7 @@ const deployedContracts = {
         },
       ],
       classHash:
-        "0x769ebd1d0e580f2a3ea2ef49ff9cf1149779bc047153fb88605aecb7e8e040f",
+        "0x6ec5472b25662a0b2ff0962a80fccca52f8a89fea53a1c33881a08161a3c8c",
     },
   },
 } as const;
