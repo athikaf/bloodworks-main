@@ -231,5 +231,64 @@ yarn deploy
 ### 5. Start local dev
 
 ```bash
-yarn dev
+yarn start
 ```
+
+---
+
+## 🔐 Design Principles
+
+- No medical data stored on-chain
+- Gas-efficient contracts
+- Event-driven architecture
+- Indexer-ready design
+- Clean separation of concerns
+
+---
+
+## 🛣️ Roadmap
+
+### Phase 1 (MVP)
+
+- Core contracts
+- Role system
+- Perk redemption
+- Event-based analytics (API routes)
+
+### Phase 2 (Scale)
+
+- Indexer (Apibara / Subsquid)
+- Postgres analytics DB
+- Real-time leaderboard
+- IPFS metadata
+- Operator performance tracking
+
+---
+
+## 🌱 Future Vision
+
+OneHeart expands beyond blood donation into:
+
+- Organ donation registries
+- Plasma donation systems
+- Disaster relief contributions
+- Global public-good coordination
+
+---
+
+## 🤝 Contributing
+
+We welcome contributors who believe in building **technology for humanity**.
+
+---
+
+## 💡 Philosophy
+
+> When one person gives, we all receive.  
+> OneHeart connects us through impact.
+
+---
+
+## 📬 Contact
+
+Built with ❤️ by <a href="https://www.linkedin.com/in/athika-fatima">**Athika Fatima**</a>
