@@ -209,3 +209,27 @@ Role-based routing:
 git clone https://github.com/YOUR_USERNAME/oneheart.git
 cd oneheart
 ```
+
+### 2. Install dependencies
+
+```bash
+yarn install
+```
+
+### 3. Run Starknet Devnet
+
+```bash
+yarn chain
+```
+
+### 4. Deploy contracts
+
+```bash
+yarn deploy
+```
+
+### 5. Start local dev
+
+```bash
+yarn dev
+```
