@@ -91,7 +91,7 @@ export function AddressInspector() {
       <div className="font-semibold">Address Inspector</div>
 
       <input
-        className="input input-bordered w-full font-mono"
+        className="input input-bordered m-2 w-full font-mono"
         placeholder="Paste wallet address..."
         value={input}
         onChange={(e) => setInput(e.target.value)}

@@ -4,9 +4,10 @@ import "~~/styles/globals.css";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "Scaffold-Stark",
-  description: "Fast track your starknet journey",
-  icons: "/logo.ico",
+  title: "OneHeart - Blood Donation on Starknet",
+  description:
+    "A decentralized blood donation platform built on Starknet, connecting donors, blood banks, and partners for a more efficient and transparent blood donation ecosystem.",
+  icons: "/new_logo.png",
 };
 
 const ScaffoldStarkApp = ({ children }: { children: React.ReactNode }) => {

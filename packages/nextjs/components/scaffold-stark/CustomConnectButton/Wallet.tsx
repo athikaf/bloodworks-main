@@ -36,8 +36,8 @@ const Wallet = ({
     <button
       className={`flex gap-4 items-center text-neutral  rounded-[4px] p-3 transition-all ${
         isDarkMode
-          ? "hover:bg-[#385183] border-[#4f4ab7]"
-          : "hover:bg-slate-200 border-[#5c4fe5]"
+          ? "hover:bg-[#385183] border-[#101010]"
+          : "hover:bg-slate-200 border-[#101010]"
       } border ${clicked ? "bg-ligth" : ""}`}
       onClick={(e) => {
         setClicked(true);

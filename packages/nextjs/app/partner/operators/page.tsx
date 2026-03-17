@@ -240,7 +240,7 @@ export default function PartnerOperatorsPage() {
               <span className="label-text">Operator address</span>
             </div>
             <input
-              className="input input-bordered font-mono"
+              className="input input-bordered font-mono m-4"
               placeholder="0x..."
               value={addr}
               onChange={(e) => setAddr(e.target.value)}
@@ -252,7 +252,7 @@ export default function PartnerOperatorsPage() {
               <span className="label-text">Label (optional)</span>
             </div>
             <input
-              className="input input-bordered"
+              className="input input-bordered m-2"
               placeholder="Downtown cashier"
               value={label}
               onChange={(e) => setLabel(e.target.value)}

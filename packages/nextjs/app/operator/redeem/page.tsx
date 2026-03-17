@@ -177,7 +177,7 @@ export default function OperatorRedeemPage() {
 
       {toast ? (
         <div className="alert alert-info">
-          <span className="text-sm break-all">{toast}</span>
+          <span className="text-sm break-all text-white">{toast}</span>
         </div>
       ) : null}
 
@@ -217,7 +217,7 @@ export default function OperatorRedeemPage() {
             <div className="font-semibold">Donor lookup</div>
 
             <input
-              className="input input-bordered w-full font-mono"
+              className="input input-bordered m-2 w-full font-mono"
               placeholder="0x... donor address"
               value={donorInput}
               onChange={(e) => setDonorInput(e.target.value)}

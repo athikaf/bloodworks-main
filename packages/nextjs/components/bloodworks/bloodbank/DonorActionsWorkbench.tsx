@@ -215,7 +215,7 @@ export const DonorActionsWorkbench: React.FC = () => {
           <label className="text-sm font-semibold">Donor Address</label>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
-              className="input input-bordered w-full"
+              className="input input-bordered m-2 w-full"
               placeholder="0x0123…"
               value={input}
               onChange={(e) => setInput(e.target.value)}

@@ -154,7 +154,7 @@ export const PartnerPerksWorkbench = () => {
             <label className="form-control w-full">
               <span className="label-text text-sm">Title</span>
               <input
-                className="input input-bordered w-full"
+                className="input input-bordered m-2 w-full"
                 value={form.title}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, title: e.target.value }))
@@ -167,7 +167,7 @@ export const PartnerPerksWorkbench = () => {
               <span className="label-text text-sm">Min donations</span>
               <input
                 type="number"
-                className="input input-bordered w-full"
+                className="input input-bordered m-2 w-full"
                 value={form.minDonations}
                 min={1}
                 onChange={(e) =>
@@ -194,7 +194,7 @@ export const PartnerPerksWorkbench = () => {
             <label className="form-control w-full md:col-span-2">
               <span className="label-text text-sm">Image URL (MVP)</span>
               <input
-                className="input input-bordered w-full"
+                className="input input-bordered m-2 w-full"
                 value={form.imageUrl}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, imageUrl: e.target.value }))

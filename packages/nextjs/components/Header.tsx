@@ -248,16 +248,14 @@ export const Header = () => {
               />
 
               {/* Panel */}
-              <div className="absolute left-0 top-0 h-full w-80 max-w-[85vw] bg-base-100 border-r border-base-300 p-4">
+              <div className="absolute left-0 top-0 h-full w-80 max-w-[85vw] p-4">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <div className="relative w-7 h-9">
-                      <Image alt="Bloodworks logo" fill src="/logo.png" />
+                      <Image alt="OneHeart logo" fill src="/new_logo.png" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-bold leading-tight">
-                        Bloodworks
-                      </span>
+                      <span className="font-bold leading-tight">OneHeart</span>
                       <span className="text-xs opacity-70">
                         Powered by Trust
                       </span>
@@ -340,14 +338,14 @@ export const Header = () => {
         >
           <div className="flex relative w-8 h-10">
             <Image
-              alt="Bloodworks logo"
+              alt="OneHeart logo"
               className="cursor-pointer"
               fill
-              src="/logo.png"
+              src="/new_logo.png"
             />
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="font-bold leading-tight">Bloodworks</span>
+            <span className="font-bold leading-tight">OneHeart</span>
             <span className="text-xs">Powered by Trust</span>
           </div>
         </Link>

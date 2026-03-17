@@ -100,7 +100,7 @@ export const AddressInfoDropdown = ({
   return (
     <>
       <details ref={dropdownRef} className="dropdown dropdown-end leading-3">
-        <summary className="btn bg-transparent btn-sm px-2 py-[0.35rem] dropdown-toggle gap-0 !h-auto border border-[#5c4fe5] ">
+        <summary className="btn bg-transparent btn-sm px-2 py-[0.35rem] dropdown-toggle gap-0 !h-auto border border-[#101010] ">
           <div className="hidden [@media(min-width:412px)]:block">
             <Avatar
               address={address}
@@ -118,7 +118,7 @@ export const AddressInfoDropdown = ({
         </summary>
         <ul
           tabIndex={0}
-          className={`dropdown-content menu z-[2] p-2 mt-2 rounded-[5px] gap-1 border border-[#5c4fe5] bg-base-100`}
+          className={`dropdown-content menu z-[2] p-2 mt-2 rounded-[5px] gap-1 border border-[#101010] bg-base-100`}
         >
           <NetworkOptions hidden={!selectingNetwork} />
           <li className={selectingNetwork ? "hidden" : ""}>
@@ -277,7 +277,7 @@ export const AddressInfoDropdown = ({
           ) : null} */}
           <li className={selectingNetwork ? "hidden" : "p-0"}>
             <button
-              className="menu-item text-secondary-content btn-sm text-sm !rounded-xl flex gap-3"
+              className="menu-item text-black btn-sm text-sm !rounded-xl flex gap-3"
               type="button"
               onClick={handleDisconnect}
             >

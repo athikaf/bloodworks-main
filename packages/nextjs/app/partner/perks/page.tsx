@@ -414,7 +414,7 @@ export default function PartnerPerksPage() {
               <span className="label-text">Perk ID (optional)</span>
             </div>
             <input
-              className="input input-bordered"
+              className="input input-bordered m-2"
               placeholder="Leave blank to auto-assign (e.g. 101)"
               value={form.perkId ?? ""}
               onChange={(e) =>
@@ -431,7 +431,7 @@ export default function PartnerPerksPage() {
               <span className="label-text">Title *</span>
             </div>
             <input
-              className="input input-bordered"
+              className="input input-bordered m-2"
               placeholder="Free coffee"
               value={form.title}
               onChange={(e) =>
@@ -459,7 +459,7 @@ export default function PartnerPerksPage() {
               <span className="label-text">Image URL / path</span>
             </div>
             <input
-              className="input input-bordered"
+              className="input input-bordered m-2"
               placeholder="/perks/placeholder.png"
               value={form.image}
               onChange={(e) =>
@@ -473,7 +473,7 @@ export default function PartnerPerksPage() {
               <span className="label-text">Min donations</span>
             </div>
             <input
-              className="input input-bordered"
+              className="input input-bordered m-2"
               type="number"
               min={0}
               value={form.minDonations}
@@ -491,7 +491,7 @@ export default function PartnerPerksPage() {
               <span className="label-text">CTA label</span>
             </div>
             <input
-              className="input input-bordered"
+              className="input input-bordered m-2"
               placeholder="How to redeem"
               value={form.ctaLabel}
               onChange={(e) =>
@@ -505,7 +505,7 @@ export default function PartnerPerksPage() {
               <span className="label-text">Category</span>
             </div>
             <input
-              className="input input-bordered"
+              className="input input-bordered m-2"
               placeholder="Food & Drink"
               value={form.category}
               onChange={(e) =>

@@ -1,10 +1,14 @@
 {
   "partnerId": 1,
-  "updatedAt": "2026-03-02T15:22:09.534Z",
+  "updatedAt": "2026-03-05T15:31:36.558Z",
   "operators": [
     {
       "address": "0x04b3f4ba8c00a02b66142a4b1dd41a4dfab4f92650922a3280977b0f03c75ee1",
       "label": "11 Thornhill Garden"
+    },
+    {
+      "address": "0x01e8c6c17efa3a047506c0b1610bd188aa3e3dd6c5d9227549b65428de24de78",
+      "label": "Downton shop 999 Harbbour front"
     }
   ]
 }

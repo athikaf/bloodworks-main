@@ -104,7 +104,7 @@ export default function AdminRolesPage() {
 
       {toast ? (
         <div className="alert alert-info">
-          <span className="text-sm break-all">{toast}</span>
+          <span className="text-sm break-all text-white">{toast}</span>
         </div>
       ) : null}
 
@@ -113,7 +113,7 @@ export default function AdminRolesPage() {
         <div className="font-semibold">Target address</div>
 
         <input
-          className="input input-bordered w-full font-mono"
+          className="input input-bordered m-2 w-full font-mono"
           placeholder="0x... address"
           value={input}
           onChange={(e) => setInput(e.target.value)}

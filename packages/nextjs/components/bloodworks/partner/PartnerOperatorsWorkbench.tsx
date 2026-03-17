@@ -96,7 +96,7 @@ export const PartnerOperatorsWorkbench = () => {
 
         <div className="flex flex-col md:flex-row gap-3">
           <input
-            className="input input-bordered w-full"
+            className="input input-bordered m-2 w-full"
             placeholder="Operator wallet address (0x...)"
             value={operator}
             onChange={(e) => setOperator(e.target.value.trim())}

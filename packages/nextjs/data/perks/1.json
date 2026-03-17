@@ -1,7 +1,7 @@
 {
   "partnerId": 1,
   "partnerName": "",
-  "updatedAt": "2026-03-04T08:48:44.041Z",
+  "updatedAt": "2026-03-05T15:25:35.610Z",
   "perks": [
     {
       "perkId": 1,
@@ -23,6 +23,17 @@
       "terms": "",
       "ctaLabel": "Redeem",
       "category": "Food & Drink",
+      "onchainCreated": true
+    },
+    {
+      "perkId": 2,
+      "title": "Timbits",
+      "description": "Thank you for donating!",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7BVtE35w_1WWbEgO-gPmDHbE5w5JQv0LJKA&s",
+      "minDonations": 2,
+      "terms": "",
+      "ctaLabel": "How to redeem",
+      "category": "",
       "onchainCreated": true
     }
   ]

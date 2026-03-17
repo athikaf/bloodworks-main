@@ -139,7 +139,7 @@ export default function AdminPartnersPage() {
 
       {toast ? (
         <div className="alert alert-info">
-          <span className="text-sm break-all">{toast}</span>
+          <span className="text-sm break-all text-white">{toast}</span>
         </div>
       ) : null}
 
@@ -148,7 +148,7 @@ export default function AdminPartnersPage() {
         <div className="font-semibold">Partner wallet address</div>
 
         <input
-          className="input input-bordered w-full font-mono"
+          className="input input-bordered m-2 w-full font-mono"
           placeholder="0x... partner wallet address"
           value={addrInput}
           onChange={(e) => setAddrInput(e.target.value)}
@@ -190,7 +190,7 @@ export default function AdminPartnersPage() {
             <span className="label-text">partnerId (u32, &gt; 0)</span>
           </div>
           <input
-            className="input input-bordered font-mono"
+            className="input input-bordered font-mono m-4"
             placeholder="e.g. 1"
             value={pidInput}
             onChange={(e) => setPidInput(e.target.value)}

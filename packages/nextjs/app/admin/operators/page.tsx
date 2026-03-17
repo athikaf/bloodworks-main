@@ -163,7 +163,7 @@ export default function AdminOperatorsPage() {
 
       {toast && (
         <div className="alert alert-info">
-          <span className="text-sm break-all">{toast}</span>
+          <span className="text-sm break-all text-white">{toast}</span>
         </div>
       )}
 
@@ -172,7 +172,7 @@ export default function AdminOperatorsPage() {
         <div className="font-semibold">Operator wallet</div>
 
         <input
-          className="input input-bordered w-full font-mono"
+          className="input input-bordered m-2 w-full font-mono"
           placeholder="0x... operator wallet"
           value={addrInput}
           onChange={(e) => setAddrInput(e.target.value)}
@@ -212,7 +212,7 @@ export default function AdminOperatorsPage() {
         <div className="font-semibold">Assign operator to partner</div>
 
         <input
-          className="input input-bordered font-mono"
+          className="input input-bordered font-mono m-4"
           placeholder="partnerId (e.g. 1)"
           value={pidInput}
           onChange={(e) => setPidInput(e.target.value)}
